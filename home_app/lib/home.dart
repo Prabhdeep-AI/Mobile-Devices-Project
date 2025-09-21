@@ -21,42 +21,63 @@ class LifeGoalsHome extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-     
       backgroundColor: Colors.lightBlue[100],
 
       appBar: AppBar(
-        title: Text("Life Goals"),
-        actions: [
-          IconButton(icon: Icon(Icons.access_time), onPressed: () {}),
-          IconButton(icon: Icon(Icons.settings), onPressed: () {}),
-        ],
-      ),
-      body: Column(
-        children: [
-          SizedBox(height: 16),
+        backgroundColor: Colors.white,
+        elevation: 2,
+        automaticallyImplyLeading: false,
 
-          
-          Column(
-            children: [
-              Icon(Icons.person, size: 60, color: Colors.black),
+        title: const Text(
+          "Life Goals",
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+            color: Colors.black,
+          ),
+        ),
+        centerTitle: false, // keep Life Goals on the left
+
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.settings, color: Colors.black),
+            onPressed: () {},
+          ),
+        ],
+
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(80), // make space for profile
+          child: Column(
+            children: const [
+              Icon(Icons.person, size: 40, color: Colors.black),
+              SizedBox(height: 4),
               Text(
                 "My Profile",
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black,
+                ),
               ),
+              SizedBox(height: 8), // extra spacing so it won’t get cut
             ],
           ),
+        ),
+      ),
 
-          SizedBox(height: 24),
+      body: Column(
+        children: [
+          const SizedBox(height: 16),
 
-          Text(
+          const Text(
             "Date",
             style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
           ),
-          SizedBox(height: 8),
+          const SizedBox(height: 8),
 
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
+            children: const [
               Column(children: [Text("Sat"), Text("20")]),
               Column(children: [Text("Sun"), Text("21")]),
               Column(children: [Text("Mon"), Text("22")]),
@@ -64,22 +85,22 @@ class LifeGoalsHome extends StatelessWidget {
             ],
           ),
 
-          Spacer(), // pushes rest down
+          const Spacer(),
         ],
       ),
 
       bottomNavigationBar: BottomAppBar(
-        shape: CircularNotchedRectangle(),
+        shape: const CircularNotchedRectangle(),
         notchMargin: 8,
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            TextButton(onPressed: () {}, child: Text("My Goals")),
-            TextButton(onPressed: () {}, child: Text("My Habits")),
-            SizedBox(width: 40), // spacing for home button
-            TextButton(onPressed: () {}, child: Text("Progress")),
+            TextButton(onPressed: () {}, child: const Text("My Goals")),
+            TextButton(onPressed: () {}, child: const Text("My Habits")),
+            const SizedBox(width: 40), // spacing for FAB
+            TextButton(onPressed: () {}, child: const Text("Progress")),
             IconButton(
-              icon: Icon(Icons.add_box), // create goal/habit
+              icon: const Icon(Icons.add_box),
               onPressed: () {},
             ),
           ],
@@ -88,10 +109,12 @@ class LifeGoalsHome extends StatelessWidget {
 
       floatingActionButton: FloatingActionButton(
         onPressed: () {},
-        child: Icon(Icons.home),
+        child: const Icon(Icons.home),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );
   }
 }
+
+
 
