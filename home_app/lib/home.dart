@@ -21,6 +21,9 @@ class LifeGoalsHome extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      // ✅ Light blue background
+      backgroundColor: Colors.lightBlue[100],
+
       appBar: AppBar(
         title: Text("Life Goals"),
         actions: [
@@ -31,6 +34,19 @@ class LifeGoalsHome extends StatelessWidget {
       body: Column(
         children: [
           SizedBox(height: 16),
+
+          // ✅ My Profile at the very top with icon + label
+          Column(
+            children: [
+              Icon(Icons.person, size: 60, color: Colors.black),
+              Text(
+                "My Profile",
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+
+          SizedBox(height: 24),
 
           Text(
             "Date",
@@ -48,14 +64,7 @@ class LifeGoalsHome extends StatelessWidget {
             ],
           ),
 
-          SizedBox(height: 40),
-
-          Center(
-            child: Text(
-              "My Profile",
-              style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
-            ),
-          ),
+          Spacer(), // pushes rest down
         ],
       ),
 
@@ -85,3 +94,4 @@ class LifeGoalsHome extends StatelessWidget {
     );
   }
 }
+
