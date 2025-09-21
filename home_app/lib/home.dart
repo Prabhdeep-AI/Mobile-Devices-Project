@@ -21,7 +21,7 @@ class LifeGoalsHome extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // ✅ Light blue background
+     
       backgroundColor: Colors.lightBlue[100],
 
       appBar: AppBar(
@@ -35,7 +35,7 @@ class LifeGoalsHome extends StatelessWidget {
         children: [
           SizedBox(height: 16),
 
-          // ✅ My Profile at the very top with icon + label
+          
           Column(
             children: [
               Icon(Icons.person, size: 60, color: Colors.black),
