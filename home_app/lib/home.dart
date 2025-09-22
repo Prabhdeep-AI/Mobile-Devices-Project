@@ -40,6 +40,10 @@ class LifeGoalsHome extends StatelessWidget {
 
         actions: [
           IconButton(
+            icon: const Icon(Icons.access_time, color: Colors.black),
+            onPressed: () {},
+          ),
+          IconButton(
             icon: const Icon(Icons.settings, color: Colors.black),
             onPressed: () {},
           ),
@@ -99,10 +103,7 @@ class LifeGoalsHome extends StatelessWidget {
             TextButton(onPressed: () {}, child: const Text("My Habits")),
             const SizedBox(width: 40), // spacing for FAB
             TextButton(onPressed: () {}, child: const Text("Progress")),
-            IconButton(
-              icon: const Icon(Icons.add_box),
-              onPressed: () {},
-            ),
+            IconButton(icon: const Icon(Icons.add_box), onPressed: () {}),
           ],
         ),
       ),
@@ -115,6 +116,3 @@ class LifeGoalsHome extends StatelessWidget {
     );
   }
 }
-
-
-
