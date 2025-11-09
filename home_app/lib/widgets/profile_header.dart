@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 
-
-class _ProfileHeader extends StatelessWidget {
+class ProfileHeader extends StatelessWidget {
   final DateTime date;
-  const _ProfileHeader({required this.date});
+  const ProfileHeader({super.key, required this.date});
 
   @override
   Widget build(BuildContext context) {
-    final dStr = '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+    final dStr =
+        '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
     return Padding(
       padding: const EdgeInsets.only(bottom: 12, top: 8),
       child: Column(

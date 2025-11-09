@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'app_state.dart';
-import 'app_state_scope.dart';
-import 'pages/home_page.dart';
+import 'package:home_app/app_state.dart';
+import 'package:home_app/app_state_scope.dart';
+import 'package:home_app/pages/home_page.dart';
 
 void main() => runApp(const LifeGoalsApp());
 
@@ -34,12 +34,16 @@ class _LifeGoalsAppState extends State<LifeGoalsApp> {
               seedColor: Colors.blue,
               brightness: appState.darkMode ? Brightness.dark : Brightness.light,
             );
+
             return AppStateScope(
               notifier: appState,
               child: MaterialApp(
                 title: 'Life Goals',
                 debugShowCheckedModeBanner: false,
-                theme: ThemeData(colorScheme: scheme, useMaterial3: true),
+                theme: ThemeData(
+                  colorScheme: scheme,
+                  useMaterial3: true,
+                ),
                 home: const LifeGoalsHome(),
               ),
             );

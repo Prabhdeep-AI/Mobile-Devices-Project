@@ -4,21 +4,18 @@ import 'goals_page.dart';
 import 'habits_page.dart';
 import 'progress_page.dart';
 import 'settings_page.dart';
-import 'reminders_page.dart'; 
+import 'reminders_page.dart';
 import '../widgets/profile_header.dart';
 import '../widgets/date_scroller.dart';
 import '../widgets/quick_card.dart';
 import '../widgets/stat_card.dart';
 import '../widgets/sparkline.dart';
 import '../helpers/dialog_helpers.dart';
-import '../helpers/utils.dart'; 
+import '../helpers/utils.dart';
 
-
-// =============================================================
-// Goals Page
-// =============================================================
 class GoalsPage extends StatelessWidget {
   const GoalsPage({super.key});
+
   @override
   Widget build(BuildContext context) {
     final state = AppStateScope.of(context);
@@ -27,7 +24,7 @@ class GoalsPage extends StatelessWidget {
       body: AnimatedBuilder(
         animation: state,
         builder: (_, __) {
-          if (state.goals.isEmpty) return const _EmptyState(msg: 'No goals yet. Add one!');
+          if (state.goals.isEmpty) return const EmptyState(msg: 'No goals yet. Add one!');
           return ListView.separated(
             itemCount: state.goals.length,
             separatorBuilder: (_, __) => const Divider(height: 0),
@@ -72,11 +69,50 @@ class GoalsPage extends StatelessWidget {
     );
   }
 
-  Future _promptForText(BuildContext context, {required String title}) async {}
+  Future<String?> _promptForText(BuildContext context, {required String title}) async {
+    String? result;
+    await showDialog(
+      context: context,
+      builder: (ctx) {
+        final controller = TextEditingController();
+        return AlertDialog(
+          title: Text(title),
+          content: TextField(controller: controller),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                result = controller.text;
+                Navigator.of(ctx).pop();
+              },
+              child: const Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
+    return result;
+  }
 
-  _dateShort(param0) {}
+  String _dateShort(DateTime date) {
+    return "${date.year}-${date.month.toString().padLeft(2,'0')}-${date.day.toString().padLeft(2,'0')}";
+  }
 }
 
-class _EmptyState {
-  const _EmptyState();
+class EmptyState extends StatelessWidget {
+  final String msg;
+  const EmptyState({super.key, required this.msg});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Text(
+        msg,
+        style: const TextStyle(fontSize: 16, color: Colors.grey),
+      ),
+    );
+  }
 }

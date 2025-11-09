@@ -1,9 +1,17 @@
+import 'package:flutter/material.dart';
 
-class _ProgressTile extends StatelessWidget {
+class ProgressTile extends StatelessWidget {
   final String label;
   final String value;
   final IconData icon;
-  const _ProgressTile({required this.label, required this.value, required this.icon});
+
+  const ProgressTile({
+    super.key,
+    required this.label,
+    required this.value,
+    required this.icon,
+  });
+
   @override
   Widget build(BuildContext context) {
     return Card(
@@ -11,7 +19,10 @@ class _ProgressTile extends StatelessWidget {
       child: ListTile(
         leading: Icon(icon),
         title: Text(label),
-        trailing: Text(value, style: const TextStyle(fontWeight: FontWeight.w700)),
+        trailing: Text(
+          value,
+          style: const TextStyle(fontWeight: FontWeight.w700),
+        ),
       ),
     );
   }

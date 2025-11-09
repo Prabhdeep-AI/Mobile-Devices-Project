@@ -1,22 +1,31 @@
 import 'package:flutter/material.dart';
 import '../app_state_scope.dart';
-import 'goals_page.dart';
-import 'habits_page.dart';
-import 'progress_page.dart';
-import 'settings_page.dart';
-import 'reminders_page.dart';
+import '../app_state.dart'; //
 import '../widgets/profile_header.dart';
 import '../widgets/date_scroller.dart';
 import '../widgets/quick_card.dart';
 import '../widgets/stat_card.dart';
 import '../widgets/sparkline.dart';
-import '../helpers/dialogs.dart';
+import '../helpers/dialog_helpers.dart';
 import '../helpers/utils.dart';
 
 
-// =============================================================
-// Habits Page (check-in per day)
-// =============================================================
+// Import EmptyState from shared file or define here
+class EmptyState extends StatelessWidget {
+  final String msg;
+  const EmptyState({super.key, required this.msg});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Text(
+        msg,
+        style: const TextStyle(fontSize: 16, color: Colors.grey),
+      ),
+    );
+  }
+}
+
 class HabitsPage extends StatelessWidget {
   final DateTime day;
   const HabitsPage({super.key, required this.day});
@@ -29,8 +38,8 @@ class HabitsPage extends StatelessWidget {
       body: AnimatedBuilder(
         animation: state,
         builder: (_, __) {
-          if (state.habits.isEmpty) return const _EmptyState(msg: 'No habits yet. Add one!');
-          final key = AppState._dayKey(day);
+          if (state.habits.isEmpty) return const EmptyState(msg: 'No habits yet. Add one!');
+          final key = AppState.dayKey(day); // make dayKey public
           return ListView.separated(
             itemCount: state.habits.length,
             separatorBuilder: (_, __) => const Divider(height: 0),
@@ -69,5 +78,33 @@ class HabitsPage extends StatelessWidget {
         child: const Icon(Icons.add),
       ),
     );
+  }
+
+  Future<String?> _promptForText(BuildContext context, {required String title}) async {
+    String? result;
+    await showDialog(
+      context: context,
+      builder: (ctx) {
+        final controller = TextEditingController();
+        return AlertDialog(
+          title: Text(title),
+          content: TextField(controller: controller),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                result = controller.text;
+                Navigator.of(ctx).pop();
+              },
+              child: const Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
+    return result;
   }
 }

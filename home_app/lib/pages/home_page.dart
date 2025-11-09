@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../app_state_scope.dart';
+import '../app_state.dart'; // <- add this
 import 'goals_page.dart';
 import 'habits_page.dart';
 import 'progress_page.dart';
@@ -10,12 +11,10 @@ import '../widgets/date_scroller.dart';
 import '../widgets/quick_card.dart';
 import '../widgets/stat_card.dart';
 import '../widgets/sparkline.dart';
-import '../helpers/dialogs.dart';
+import '../helpers/dialog_helpers.dart';
 import '../helpers/utils.dart';
 
-// =============================================================
-// Home
-// =============================================================
+
 class LifeGoalsHome extends StatefulWidget {
   const LifeGoalsHome({super.key});
 
@@ -37,23 +36,29 @@ class _LifeGoalsHomeState extends State<LifeGoalsHome> {
           IconButton(
             icon: const Icon(Icons.alarm),
             tooltip: 'Reminders',
-            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const RemindersPage())),
+            onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) => const RemindersPage())),
           ),
           IconButton(
             icon: const Icon(Icons.settings),
             tooltip: 'Settings',
-            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsPage())),
+            onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) => const SettingsPage())),
           ),
         ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(90),
-          child: _ProfileHeader(date: selectedDay),
+          child: ProfileHeader(date: selectedDay),
         ),
       ),
       body: Column(
         children: [
           const SizedBox(height: 8),
-          _DateScroller(
+          DateScroller(
             initial: selectedDay,
             onSelect: (d) => setState(() => selectedDay = d),
           ),
@@ -63,18 +68,24 @@ class _LifeGoalsHomeState extends State<LifeGoalsHome> {
             child: Row(
               children: [
                 Expanded(
-                  child: _QuickCard(
+                  child: QuickCard(
                     label: 'Goals',
                     icon: Icons.flag,
-                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const GoalsPage())),
+                    onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (_) => const GoalsPage())),
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: _QuickCard(
+                  child: QuickCard(
                     label: 'Habits',
                     icon: Icons.repeat,
-                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => HabitsPage(day: selectedDay))),
+                    onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (_) => HabitsPage(day: selectedDay))),
                   ),
                 ),
               ],
@@ -87,16 +98,19 @@ class _LifeGoalsHomeState extends State<LifeGoalsHome> {
               child: AnimatedBuilder(
                 animation: state,
                 builder: (_, __) {
-                  final completed = state.goals.where((g) => g.done).length;
+                  final completed =
+                      state.goals.where((g) => g.done).length;
                   final total = state.goals.length;
                   final todayDone = state.habits
-                      .where((h) => h.completions.contains(AppState._dayKey(selectedDay)))
+                      .where((h) =>
+                      h.completions.contains(
+                          AppState.dayKey(selectedDay)))
                       .length;
 
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _StatCard(
+                      StatCard(
                         title: 'Today',
                         lines: [
                           '$completed / $total goals completed',
@@ -106,7 +120,7 @@ class _LifeGoalsHomeState extends State<LifeGoalsHome> {
                       const SizedBox(height: 12),
                       const Text('Last 7 days'),
                       const SizedBox(height: 6),
-                      _Sparkline(habits: state.habits),
+                      Sparkline(habits: state.habits),
                     ],
                   );
                 },
@@ -122,16 +136,25 @@ class _LifeGoalsHomeState extends State<LifeGoalsHome> {
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
             TextButton(
-              onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const GoalsPage())),
+              onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) => const GoalsPage())),
               child: const Text('My Goals'),
             ),
             TextButton(
-              onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => HabitsPage(day: selectedDay))),
+              onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) => HabitsPage(day: selectedDay))),
               child: const Text('My Habits'),
             ),
             const SizedBox(width: 40),
             TextButton(
-              onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProgressPage())),
+              onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) => const ProgressPage())),
               child: const Text('Progress'),
             ),
             IconButton(
@@ -147,6 +170,16 @@ class _LifeGoalsHomeState extends State<LifeGoalsHome> {
         onPressed: () => Navigator.of(context).popUntil((r) => r.isFirst),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+    );
+  }
+
+  void _showQuickAdd(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => const AlertDialog(
+        title: Text('Quick Add'),
+        content: Text('Implement your quick add UI here'),
+      ),
     );
   }
 }

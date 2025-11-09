@@ -1,3 +1,7 @@
+import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:home_app/models.dart';
+import 'package:home_app/db_helper.dart';
 
 /// ============================================================
 /// Persistent App State (SharedPreferences)
@@ -48,7 +52,6 @@ class AppState extends ChangeNotifier {
   }
 
   void toggleGoal(int index) {
-
     final g = goals[index];
     final updated = g.copyWith(done: !g.done);
     goals[index] = updated;
@@ -69,14 +72,16 @@ class AppState extends ChangeNotifier {
   }
 
   void toggleHabitForDay(int index, DateTime day) {
-    final key = _dayKey(day);
+    final key = dayKey(day); // made public
     final h = habits[index];
     final set = {...h.completions};
+
     if (set.contains(key)) {
       set.remove(key);
     } else {
       set.add(key);
     }
+
     final newStreak = _computeStreakFromCompletions(set);
     habits[index] = h.copyWith(completions: set, streak: newStreak);
     _persist();
@@ -95,8 +100,8 @@ class AppState extends ChangeNotifier {
   }
 
   void addReminder(TimeOfDay t) {
-    final s = _formatTimeOfDay(t);
-    if(!reminderTimes.contains(s)){
+    final s = _formatTimeOfDay(t); // made public if needed
+    if (!reminderTimes.contains(s)) {
       reminderTimes.add(s);
       DBHelper.addReminder(s);
       _persist();
@@ -112,19 +117,19 @@ class AppState extends ChangeNotifier {
   // ---------- Helpers ----------
   void _persist() {
     notifyListeners();
-    // fire-and-forget; no need to await
-    _save();
+    _save(); // fire & forget
   }
 
-  static String _dayKey(DateTime d) =>
+  /// ✅ Public dayKey
+  static String dayKey(DateTime d) =>
       '${d.year.toString().padLeft(4, '0')}${d.month.toString().padLeft(2, '0')}${d.day.toString().padLeft(2, '0')}';
 
+  // ---------- Private helpers ----------
   static int _computeStreakFromCompletions(Set<String> dates) {
-    // Count consecutive days backwards starting today
     int streak = 0;
     DateTime day = DateTime.now();
-    while (dates.contains(_dayKey(day))) {
-      streak += 1;
+    while (dates.contains(dayKey(day))) {
+      streak++;
       day = day.subtract(const Duration(days: 1));
     }
     return streak;

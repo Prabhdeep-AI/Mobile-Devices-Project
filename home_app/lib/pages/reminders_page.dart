@@ -4,21 +4,21 @@ import 'goals_page.dart';
 import 'habits_page.dart';
 import 'progress_page.dart';
 import 'settings_page.dart';
-import 'reminders_page.dart';
 import '../widgets/profile_header.dart';
 import '../widgets/date_scroller.dart';
 import '../widgets/quick_card.dart';
 import '../widgets/stat_card.dart';
 import '../widgets/sparkline.dart';
-import '../helpers/dialogs.dart';
+import '../helpers/dialog_helpers.dart';
 import '../helpers/utils.dart';
-
 
 class RemindersPage extends StatelessWidget {
   const RemindersPage({super.key});
+
   @override
   Widget build(BuildContext context) {
     final state = AppStateScope.of(context);
+
     return Scaffold(
       appBar: AppBar(title: const Text('Reminders')),
       body: AnimatedBuilder(
@@ -34,7 +34,7 @@ class RemindersPage extends StatelessWidget {
                   runSpacing: 8,
                   children: state.reminderTimes
                       .map((t) => InputChip(
-                    label: Text(t),
+                    label: Text(t), // display string directly
                     onDeleted: () => state.removeReminder(t),
                   ))
                       .toList(),
@@ -44,7 +44,10 @@ class RemindersPage extends StatelessWidget {
                   icon: const Icon(Icons.add_alarm),
                   label: const Text('Add reminder time'),
                   onPressed: () async {
-                    final picked = await showTimePicker(context: context, initialTime: TimeOfDay.now());
+                    final picked = await showTimePicker(
+                      context: context,
+                      initialTime: TimeOfDay.now(),
+                    );
                     if (picked != null) state.addReminder(picked);
                   },
                 ),

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
-class _StatCard extends StatelessWidget {
+class StatCard extends StatelessWidget {
   final String title;
   final List<String> lines;
-  const _StatCard({required this.title, required this.lines});
+  const StatCard({required this.title, required this.lines});
   @override
   Widget build(BuildContext context) {
     return Card(

@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 
-class _DateScroller extends StatefulWidget {
+class DateScroller extends StatefulWidget {
   final DateTime initial;
   final ValueChanged<DateTime> onSelect;
-  const _DateScroller({required this.initial, required this.onSelect});
+  const DateScroller({required this.initial, required this.onSelect});
 
   @override
-  State<_DateScroller> createState() => _DateScrollerState();
+  State<DateScroller> createState() => _DateScrollerState();
 }
 
-class _DateScrollerState extends State<_DateScroller> {
+class _DateScrollerState extends State<DateScroller> {
   late DateTime start;
   DateTime? selected;
 

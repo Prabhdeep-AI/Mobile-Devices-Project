@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
-class _QuickCard extends StatelessWidget {
+class QuickCard extends StatelessWidget {
   final String label;
   final IconData icon;
   final VoidCallback onTap;
-  const _QuickCard({required this.label, required this.icon, required this.onTap});
+  const QuickCard({required this.label, required this.icon, required this.onTap});
   @override
   Widget build(BuildContext context) {
     return Card(
