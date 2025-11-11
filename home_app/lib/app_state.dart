@@ -1,23 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:home_app/models.dart';
-import 'package:home_app/db_helper.dart';
+import 'models.dart';
+import 'db_helper.dart';
+import 'notifications.dart';
 
-/// ============================================================
-/// Persistent App State (SharedPreferences)
-/// ============================================================
 class AppState extends ChangeNotifier {
-  AppState();
-
   final List<Goal> goals = [];
   final List<Habit> habits = [];
+  final List<String> reminderTimes = [];
   bool darkMode = false;
-  final List<String> reminderTimes = []; // HH:MM 24h strings
 
-  static const _kGoals = 'goals';
-  static const _kHabits = 'habits';
   static const _kDark = 'dark';
-  static const _kReminders = 'reminders';
+
+  // Public dayKey
+  static String dayKey(DateTime d) =>
+      '${d.year.toString().padLeft(4, '0')}${d.month.toString().padLeft(2, '0')}${d.day.toString().padLeft(2, '0')}';
 
   Future<void> load() async {
     final sp = await SharedPreferences.getInstance();
@@ -35,20 +32,20 @@ class AppState extends ChangeNotifier {
       ..clear()
       ..addAll(await DBHelper.getReminders());
 
+    for (var hhmm in reminderTimes) {
+      final parts = hhmm.split(':');
+      final time = TimeOfDay(hour: int.parse(parts[0]), minute: int.parse(parts[1]));
+      await NotificationService.scheduleDaily(time: time, id: hhmm.hashCode);
+    }
+
     notifyListeners();
   }
 
-  Future<void> _save() async {
-    final sp = await SharedPreferences.getInstance();
-    await sp.setBool(_kDark, darkMode);
-  }
-
-  // ---------- Goals API ----------
   void addGoal(String title, {DateTime? due}) {
-    final goal = Goal(title: title, dueDate: due);
-    goals.add(goal);
-    DBHelper.insertGoal(goal);
-    _persist();
+    final g = Goal(title: title, dueDate: due);
+    goals.add(g);
+    DBHelper.insertGoal(g);
+    notifyListeners();
   }
 
   void toggleGoal(int index) {
@@ -56,85 +53,79 @@ class AppState extends ChangeNotifier {
     final updated = g.copyWith(done: !g.done);
     goals[index] = updated;
     DBHelper.insertGoal(updated);
-    _persist();
+    notifyListeners();
   }
 
   void removeGoal(int index) {
-    DBHelper.deleteGoal(goals[index].id);
+    DBHelper.deleteGoal(goals[index].id!);
     goals.removeAt(index);
-    _persist();
+    notifyListeners();
   }
 
-  // ---------- Habits API ----------
   void addHabit(String title) {
-    habits.add(Habit(title: title));
-    _persist();
+    final h = Habit(title: title);
+    habits.add(h);
+    DBHelper.insertHabit(h);
+    notifyListeners();
   }
 
   void toggleHabitForDay(int index, DateTime day) {
-    final key = dayKey(day); // made public
     final h = habits[index];
-    final set = {...h.completions};
+    final key = dayKey(day);
+    final newCompletions = Set<String>.from(h.completions);
+    if (newCompletions.contains(key)) newCompletions.remove(key);
+    else newCompletions.add(key);
 
-    if (set.contains(key)) {
-      set.remove(key);
-    } else {
-      set.add(key);
-    }
+    final updated = h.copyWith(
+      completions: newCompletions,
+      streak: DBHelper.calculateStreak(newCompletions),
+    );
 
-    final newStreak = _computeStreakFromCompletions(set);
-    habits[index] = h.copyWith(completions: set, streak: newStreak);
-    _persist();
+    habits[index] = updated;
+    DBHelper.insertHabit(updated);
+    notifyListeners();
   }
 
   void resetHabit(int index) {
     final h = habits[index];
-    habits[index] = h.copyWith(completions: {}, streak: 0);
-    _persist();
-  }
-
-  // ---------- Reminders + Theme ----------
-  void setDark(bool v) {
-    darkMode = v;
-    _persist();
+    final updated = h.copyWith(completions: {}, streak: 0);
+    habits[index] = updated;
+    DBHelper.insertHabit(updated);
+    notifyListeners();
   }
 
   void addReminder(TimeOfDay t) {
-    final s = _formatTimeOfDay(t); // made public if needed
+    final s = '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
     if (!reminderTimes.contains(s)) {
       reminderTimes.add(s);
       DBHelper.addReminder(s);
-      _persist();
+      NotificationService.scheduleDaily(time: t, id: s.hashCode);
+      notifyListeners();
     }
   }
 
-  void removeReminder(String hhmm) {
-    reminderTimes.remove(hhmm);
-    DBHelper.removeReminder(hhmm);
-    _persist();
-  }
-
-  // ---------- Helpers ----------
-  void _persist() {
+  void removeReminder(String s) {
+    reminderTimes.remove(s);
+    DBHelper.removeReminder(s);
+    NotificationService.cancel(s.hashCode);
     notifyListeners();
-    _save(); // fire & forget
   }
 
-  /// ✅ Public dayKey
-  static String dayKey(DateTime d) =>
-      '${d.year.toString().padLeft(4, '0')}${d.month.toString().padLeft(2, '0')}${d.day.toString().padLeft(2, '0')}';
-
-  // ---------- Private helpers ----------
-  static int _computeStreakFromCompletions(Set<String> dates) {
-    int streak = 0;
-    DateTime day = DateTime.now();
-    while (dates.contains(dayKey(day))) {
-      streak++;
-      day = day.subtract(const Duration(days: 1));
-    }
-    return streak;
+  void setDark(bool value) {
+    darkMode = value;
+    notifyListeners();
+    _save();
   }
 
-  static String _formatTimeOfDay(TimeOfDay t) =>
-      '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
+  Future<void> _save() async {
+    final sp = await SharedPreferences.getInstance();
+    await sp.setBool(_kDark, darkMode);
+  }
 }
+
+
+
+
+
+
+

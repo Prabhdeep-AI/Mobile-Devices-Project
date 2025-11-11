@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:home_app/app_state.dart';
-import 'package:home_app/app_state_scope.dart';
-import 'package:home_app/pages/home_page.dart';
+import 'app_state.dart';
+import 'app_state_scope.dart';
+import 'pages/home_page.dart';
+import 'notifications.dart';
 
-void main() => runApp(const LifeGoalsApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await NotificationService.init(); // Initialize Android notifications
+  runApp(const LifeGoalsApp());
+}
 
 class LifeGoalsApp extends StatefulWidget {
   const LifeGoalsApp({super.key});
@@ -34,17 +39,13 @@ class _LifeGoalsAppState extends State<LifeGoalsApp> {
               seedColor: Colors.blue,
               brightness: appState.darkMode ? Brightness.dark : Brightness.light,
             );
-
             return AppStateScope(
               notifier: appState,
               child: MaterialApp(
                 title: 'Life Goals',
                 debugShowCheckedModeBanner: false,
-                theme: ThemeData(
-                  colorScheme: scheme,
-                  useMaterial3: true,
-                ),
-                home: const LifeGoalsHome(),
+                theme: ThemeData(colorScheme: scheme, useMaterial3: true),
+                home: const HomePage(),
               ),
             );
           },
@@ -53,3 +54,9 @@ class _LifeGoalsAppState extends State<LifeGoalsApp> {
     );
   }
 }
+
+
+
+
+
+

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CompilerConfiguration">
+    <bytecodeTargetLevel>
+      <module name="com.dexterous.flutterlocalnotifications.android.flutter_local_notifications" target="17" />
+      <module name="dev.flutter.plugin.gradle" target="17" />
+      <module name="dev.flutter.plugin.gradle.main" target="11" />
+      <module name="dev.flutter.plugin.gradle.test" target="11" />
+    </bytecodeTargetLevel>
+  </component>
+</project>

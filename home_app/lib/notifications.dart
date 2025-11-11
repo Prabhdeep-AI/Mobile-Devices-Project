@@ -1,95 +1,52 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
-import 'package:timezone/data/latest.dart' as tzdata;
 
-
-
-// Handling of local notifications in the app.
-
-class NotificationService{
-  static final FlutterLocalNotificationsPlugin _notifications =
-      FlutterLocalNotificationsPlugin();
-
-  //Initializing Notifs for Android
+class NotificationService {
+  static final FlutterLocalNotificationsPlugin _notificationsPlugin =
+  FlutterLocalNotificationsPlugin();
 
   static Future<void> init() async {
-    //Initialize timezone for proper scheduling
-    tzdata.initializeTimeZones();
-    const androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
-    const initSettings = InitializationSettings(android: androidInit);
+    tz.initializeTimeZones();
+    tz.setLocalLocation(tz.getLocation('America/New_York')); // Adjust timezone
 
-    await _notifications.initialize(initSettings);
+    const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
+    const initSettings = InitializationSettings(android: androidSettings);
 
-
-    /// Shows Notif immediately(for testting)
+    await _notificationsPlugin.initialize(initSettings);
   }
-    static Future<void> showInstant({
-      required String title,
-      required String body,
-    }) async {
-      const androidDetails = AndroidNotificationDetails(
-        'instant_channel',
-        'Instant Notification',
-        channelDescription: 'Instant notifications for testing',
-        importance: Importance.high,
-        priority: Priority.high,
-      );
-
-      await _notifications.show(
-        0,
-        title,
-        body,
-        const NotificationDetails(android: androidDetails),
-      );
-    }
-
-    //Schedule a daily notification at a specific time.
 
   static Future<void> scheduleDaily({
     required TimeOfDay time,
-    String title = 'Life Goals Reminder',
-    String body = 'Check your goals and habits today!',
-}) async{
-    final now = TimeOfDay.now();
-    final nowDate = DateTime.now();
+    required int id,
+    String title = 'Habit Reminder',
+    String body = 'Don’t forget to complete your habit today! 💪',
+  }) async {
+    final now = tz.TZDateTime.now(tz.local);
+    var scheduledDate = tz.TZDateTime(tz.local, now.year, now.month, now.day, time.hour, time.minute);
+    if (scheduledDate.isBefore(now)) scheduledDate = scheduledDate.add(const Duration(days: 1));
 
-    // convert TimeofDay to a DateTime
-
-    DateTime scheduled = DateTime(
-      nowDate.year,
-      nowDate.month,
-      nowDate.day,
-      time.hour,
-      time.minute,
-    );
-    if (scheduled.isBefore(nowDate)){
-      scheduled =  scheduled.add(const Duration(days:1));
-    }
-    const androidDetails = AndroidNotificationDetails(
-      'daily_reminder',
-      'Daily Reminders',
-      channelDescription: 'Daily Habit and goal reminders',
-      importance: Importance.high,
+    final androidDetails = AndroidNotificationDetails(
+      'daily_habits_channel', 'Daily Habits',
+      channelDescription: 'Daily reminders for your habits',
+      importance: Importance.max,
       priority: Priority.high,
     );
 
-    await _notifications.zonedSchedule(
-      time.hashCode,
-      title,
-      body,
-      tz.TZDateTime.from(scheduled, tz.local),
-      const NotificationDetails(android: androidDetails),
+    await _notificationsPlugin.zonedSchedule(
+      id, title, body, scheduledDate, NotificationDetails(android: androidDetails),
       androidAllowWhileIdle: true,
-      uiLocalNotificationDateInterpretation:
-        UILocalNotificationDateInterpretation.absoluteTime,
+      uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
       matchDateTimeComponents: DateTimeComponents.time,
     );
-
   }
 
-  // Cancel all schedules notifications
-static Future<void> cancelAll() async{
-    await _notifications.cancelAll();
+  static Future<void> cancel(int id) async => await _notificationsPlugin.cancel(id);
+  static Future<void> cancelAll() async => await _notificationsPlugin.cancelAll();
 }
-  }
+
+
+
+
+
