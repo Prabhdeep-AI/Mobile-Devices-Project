@@ -14,16 +14,11 @@ class ProgressTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-      child: ListTile(
-        leading: Icon(icon),
-        title: Text(label),
-        trailing: Text(
-          value,
-          style: const TextStyle(fontWeight: FontWeight.w700),
-        ),
-      ),
+    return ListTile(
+      leading: Icon(icon),
+      title: Text(label),
+      // Use const TextStyle for efficiency
+      trailing: Text(value, style: const TextStyle(fontWeight: FontWeight.bold)),
     );
   }
 }

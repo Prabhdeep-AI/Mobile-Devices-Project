@@ -1,10 +1,40 @@
 import 'package:flutter/material.dart';
 import '../app_state.dart';
 import '../app_state_scope.dart';
+import '../helpers/utils.dart'; // [FIX] Import utils.dart to use last7DaysCompletionCounts
+import '../widgets/progress_tile.dart';
 
-class ProgressPage extends StatelessWidget {
+class ProgressPage extends StatefulWidget {
   const ProgressPage({super.key});
 
+  @override
+  State<ProgressPage> createState() => _ProgressPageState();
+}
+
+class _ProgressPageState extends State<ProgressPage> with SingleTickerProviderStateMixin {
+  late AnimationController _fadeController;
+  late Animation<double> _fadeAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _fadeController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500), // Increased duration
+    );
+    _fadeAnimation = CurvedAnimation(
+      parent: _fadeController,
+      curve: Curves.easeOutCubic,
+    );
+    _fadeController.forward();
+  }
+
+  @override
+  void dispose() {
+    _fadeController.dispose();
+    super.dispose();
+  }
+  
   @override
   Widget build(BuildContext context) {
     final state = AppStateScope.of(context);
@@ -18,64 +48,53 @@ class ProgressPage extends StatelessWidget {
           final done = state.goals.where((g) => g.done).length;
           final habits = state.habits.length;
           final totalStreak = state.habits.fold<int>(0, (sum, h) => sum + h.streak);
-          final last7 = _last7Counts(state.habits);
+          
+          // [FIX] Use the helper from utils.dart
+          final last7 = last7DaysCompletionCounts(state.habits); 
 
-          return Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                ProgressTile(label: 'Goals completed', value: '$done / $totalGoals', icon: Icons.flag),
-                ProgressTile(label: 'Habits tracking', value: '$habits', icon: Icons.repeat),
-                ProgressTile(label: 'Total streak', value: '$totalStreak', icon: Icons.local_fire_department),
-                const SizedBox(height: 16),
-                const Text('Completions (last 7 days)'),
-                const SizedBox(height: 8),
-                SizedBox(height: 100, child: CustomPaint(painter: SparklinePainter(values: last7))),
-                const Spacer(),
-                FilledButton.icon(
-                  icon: const Icon(Icons.emoji_events),
-                  label: const Text('Great job!'),
-                  onPressed: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Keep going! 🚀'))),
-                ),
-              ],
+          return FadeTransition( // Wrapped in FadeTransition
+            opacity: _fadeAnimation,
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  ProgressTile(label: 'Goals completed', value: '$done / $totalGoals', icon: Icons.flag),
+                  ProgressTile(label: 'Habits tracking', value: '$habits', icon: Icons.repeat),
+                  ProgressTile(label: 'Total streak', value: '$totalStreak', icon: Icons.local_fire_department),
+                  const SizedBox(height: 16),
+                  const Text('Completions (last 7 days)'),
+                  const Divider(),
+                  SizedBox(
+                    height: 100,
+                    child: CustomPaint(
+                      painter: SparklinePainter(values: last7),
+                      child: Container(),
+                    ),
+                  ),
+                ],
+              ),
             ),
           );
         },
       ),
-    );
-  }
-
-  List<int> _last7Counts(List<dynamic> habits) {
-    final now = DateTime.now();
-    List<int> counts = List.generate(7, (_) => 0);
-    for (var h in habits) {
-      for (int i = 0; i < 7; i++) {
-        final key = AppState.dayKey(now.subtract(Duration(days: i)));
-        if (h.completions.contains(key)) counts[6 - i]++;
-      }
-    }
-    return counts;
-  }
-}
-
-class ProgressTile extends StatelessWidget {
-  final String label;
-  final String value;
-  final IconData icon;
-  const ProgressTile({super.key, required this.label, required this.value, required this.icon});
-
-  @override
-  Widget build(BuildContext context) {
-    return ListTile(
-      leading: Icon(icon),
-      title: Text(label),
-      trailing: Text(value, style: const TextStyle(fontWeight: FontWeight.bold)),
+      // [NEW] FAB is now a Home button
+      floatingActionButton: FloatingActionButton(
+        tooltip: 'Go to Home',
+        onPressed: () {
+          // Pops the current page off the stack, returning to Home
+          Navigator.of(context).pop(); 
+        },
+        child: const Icon(Icons.home),
+      ),
     );
   }
 }
+
 
 class SparklinePainter extends CustomPainter {
+  // ...
+  // [Content from original file]
   final List<int> values;
   SparklinePainter({required this.values});
 
@@ -93,7 +112,7 @@ class SparklinePainter extends CustomPainter {
       else path.lineTo(x, y);
     }
     canvas.drawPath(path, paint);
-    final dotPaint = Paint()..color = Colors.blue;
+    final dotPaint = Paint()..color = Colors.blue.shade900..style = PaintingStyle.fill;
     for (int i = 0; i < values.length; i++) {
       final x = i * step;
       final y = size.height - (values[i] / (maxVal == 0 ? 1 : maxVal)) * size.height;
@@ -102,6 +121,5 @@ class SparklinePainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant SparklinePainter oldDelegate) => oldDelegate.values != values;
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 }
-

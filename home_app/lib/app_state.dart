@@ -1,128 +1,182 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'models.dart';
 import 'db_helper.dart';
-import 'notifications.dart';
+import 'models.dart';
 
 class AppState extends ChangeNotifier {
-  final List<Goal> goals = [];
-  final List<Habit> habits = [];
-  final List<String> reminderTimes = [];
+  // -------------------------------
+  // DATA
+  // -------------------------------
+  List<Goal> goals = [];
+  List<Habit> habits = [];
+  List<String> reminders = [];
+
+
+
+  // -------------------------------
+  // THEME / BACKGROUND
+  // -------------------------------
+  Color _backgroundColor = Colors.white;
+  Color get backgroundColor => _backgroundColor;
+
+  String backgroundKey = 'default';
   bool darkMode = false;
 
-  static const _kDark = 'dark';
+  // -------------------------------
+  // SELECTED DATE
+  // -------------------------------
+  DateTime selectedDate = DateTime.now();
 
-  // Public dayKey
-  static String dayKey(DateTime d) =>
-      '${d.year.toString().padLeft(4, '0')}${d.month.toString().padLeft(2, '0')}${d.day.toString().padLeft(2, '0')}';
-
-  Future<void> load() async {
-    final sp = await SharedPreferences.getInstance();
-    darkMode = sp.getBool(_kDark) ?? false;
-
-    goals
-      ..clear()
-      ..addAll(await DBHelper.getGoals());
-
-    habits
-      ..clear()
-      ..addAll(await DBHelper.getHabits());
-
-    reminderTimes
-      ..clear()
-      ..addAll(await DBHelper.getReminders());
-
-    for (var hhmm in reminderTimes) {
-      final parts = hhmm.split(':');
-      final time = TimeOfDay(hour: int.parse(parts[0]), minute: int.parse(parts[1]));
-      await NotificationService.scheduleDaily(time: time, id: hhmm.hashCode);
-    }
-
+  // -------------------------------
+  // INITIAL LOAD
+  // -------------------------------
+  Future<void> loadFromDatabase() async {
+    goals = await DBHelper.getGoals();
+    habits = await DBHelper.getHabits();
+    reminders = await DBHelper.getReminders();
+    _backgroundColor = await DBHelper.getBackgroundColor() ?? Colors.white;
     notifyListeners();
   }
 
-  void addGoal(String title, {DateTime? due}) {
-    final g = Goal(title: title, dueDate: due);
-    goals.add(g);
-    DBHelper.insertGoal(g);
+  // -------------------------------
+  // THEME METHODS
+  // -------------------------------
+  Future<void> updateBackgroundColor(Color color, {String? key}) async {
+    _backgroundColor = color;
+    if (key != null) backgroundKey = key;
+    await DBHelper.saveBackgroundColor(color);
     notifyListeners();
   }
 
-  void toggleGoal(int index) {
-    final g = goals[index];
-    final updated = g.copyWith(done: !g.done);
-    goals[index] = updated;
-    DBHelper.insertGoal(updated);
+  void setDarkMode(bool value) {
+    darkMode = value;
     notifyListeners();
   }
 
-  void removeGoal(int index) {
-    DBHelper.deleteGoal(goals[index].id!);
-    goals.removeAt(index);
+  void setBackground(String key) {
+    backgroundKey = key;
+    final color = backgroundOptions
+        .firstWhere((o) => o.key == key, orElse: () => backgroundOptions.first)
+        .color;
+    updateBackgroundColor(color, key: key);
+  }
+
+  // -------------------------------
+  // GOALS METHODS
+  // -------------------------------
+  Future<void> addGoal(String title, {DateTime? due}) async {
+    final goal = Goal(title: title, dueDate: due);
+    await DBHelper.insertGoal(goal);
+    goals.add(goal);
     notifyListeners();
   }
 
-  void addHabit(String title) {
-    final h = Habit(title: title);
-    habits.add(h);
-    DBHelper.insertHabit(h);
-    notifyListeners();
-  }
-
-  void toggleHabitForDay(int index, DateTime day) {
-    final h = habits[index];
-    final key = dayKey(day);
-    final newCompletions = Set<String>.from(h.completions);
-    if (newCompletions.contains(key)) newCompletions.remove(key);
-    else newCompletions.add(key);
-
-    final updated = h.copyWith(
-      completions: newCompletions,
-      streak: DBHelper.calculateStreak(newCompletions),
-    );
-
-    habits[index] = updated;
-    DBHelper.insertHabit(updated);
-    notifyListeners();
-  }
-
-  void resetHabit(int index) {
-    final h = habits[index];
-    final updated = h.copyWith(completions: {}, streak: 0);
-    habits[index] = updated;
-    DBHelper.insertHabit(updated);
-    notifyListeners();
-  }
-
-  void addReminder(TimeOfDay t) {
-    final s = '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
-    if (!reminderTimes.contains(s)) {
-      reminderTimes.add(s);
-      DBHelper.addReminder(s);
-      NotificationService.scheduleDaily(time: t, id: s.hashCode);
+  Future<void> toggleGoal(String id) async {
+    final index = goals.indexWhere((g) => g.id == id);
+    if (index != -1) {
+      final updated = goals[index].copyWith(done: !goals[index].done);
+      goals[index] = updated;
+      await DBHelper.updateGoal(updated);
       notifyListeners();
     }
   }
 
-  void removeReminder(String s) {
-    reminderTimes.remove(s);
-    DBHelper.removeReminder(s);
-    NotificationService.cancel(s.hashCode);
+  Future<void> deleteGoal(String id) async {
+    await DBHelper.deleteGoal(id);
+    goals.removeWhere((g) => g.id == id);
     notifyListeners();
   }
 
-  void setDark(bool value) {
-    darkMode = value;
+  // -------------------------------
+  // HABITS METHODS
+  // -------------------------------
+  Future<void> addHabit(String title) async {
+    final habit = Habit(title: title);
+    await DBHelper.insertHabit(habit);
+    habits.add(habit);
     notifyListeners();
-    _save();
   }
 
-  Future<void> _save() async {
-    final sp = await SharedPreferences.getInstance();
-    await sp.setBool(_kDark, darkMode);
+  Future<void> toggleHabit(int index, DateTime day) async {
+    final habit = habits[index];
+    final key = dayKey(day);
+    final completions = Set<String>.from(habit.completions);
+    if (completions.contains(key)) {
+      completions.remove(key);
+    } else {
+      completions.add(key);
+    }
+
+    final updated = habit.copyWith(
+      completions: completions,
+      streak: DBHelper.calculateStreak(completions),
+    );
+    habits[index] = updated;
+    await DBHelper.updateHabit(updated);
+    notifyListeners();
   }
+
+  Future<void> resetHabit(int index) async {
+    final habit = habits[index];
+    final updated = habit.copyWith(completions: {}, streak: 0);
+    habits[index] = updated;
+    await DBHelper.updateHabit(updated);
+    notifyListeners();
+  }
+
+  Future<void> deleteHabit(String id) async {
+    await DBHelper.deleteHabit(id);
+    habits.removeWhere((h) => h.id == id);
+    notifyListeners();
+  }
+
+  // -------------------------------
+  // REMINDERS METHODS
+  // -------------------------------
+  Future<void> addReminder(TimeOfDay time) async {
+    final str =
+        '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
+    if (!reminders.contains(str)) {
+      reminders.add(str);
+      await DBHelper.addReminder(str);
+      notifyListeners();
+    }
+  }
+
+  Future<void> deleteReminder(String time) async {
+    reminders.remove(time);
+    await DBHelper.removeReminder(time);
+    notifyListeners();
+  }
+
+  // -------------------------------
+  // UTILITIES
+  // -------------------------------
+  static String dayKey(DateTime d) =>
+      '${d.year.toString().padLeft(4, '0')}${d.month.toString().padLeft(2, '0')}${d.day.toString().padLeft(2, '0')}';
+
+  static List<BackgroundOption> backgroundOptions = [
+    BackgroundOption(
+        key: 'default', name: 'Blue', color: Colors.blue, icon: Icons.circle),
+    BackgroundOption(
+        key: 'green', name: 'Green', color: Colors.green, icon: Icons.circle),
+    BackgroundOption(
+        key: 'pink', name: 'Pink', color: Colors.pink, icon: Icons.circle),
+  ];
 }
 
+class BackgroundOption {
+  final String key;
+  final String name;
+  final Color color;
+  final IconData icon;
+
+  const BackgroundOption({
+    required this.key,
+    required this.name,
+    required this.color,
+    required this.icon,
+  });
+}
 
 
 

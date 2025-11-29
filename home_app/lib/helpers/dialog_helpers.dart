@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../app_state_scope.dart';
+import '../app_state.dart';
 import '../pages/progress_page.dart';
 
 Future<String?> _promptForText(BuildContext context, {required String title}) {
@@ -10,8 +11,14 @@ Future<String?> _promptForText(BuildContext context, {required String title}) {
       title: Text(title),
       content: TextField(controller: controller, autofocus: true),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context, null), child: const Text('Cancel')),
-        FilledButton(onPressed: () => Navigator.pop(context, controller.text), child: const Text('Save')),
+        TextButton(
+          onPressed: () => Navigator.pop(context, null),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.pop(context, controller.text),
+          child: const Text('Save'),
+        ),
       ],
     ),
   );
@@ -35,7 +42,10 @@ void showQuickAdd(BuildContext context) {
                 onTap: () async {
                   Navigator.pop(context);
                   final text = await _promptForText(context, title: 'New Goal');
-                  if (text != null && text.trim().isNotEmpty) state.addGoal(text.trim());
+                  if (text != null && text.trim().isNotEmpty) {
+                    // AppState now handles creation
+                    await state.addGoal(text.trim());
+                  }
                 },
               ),
               ListTile(
@@ -44,7 +54,9 @@ void showQuickAdd(BuildContext context) {
                 onTap: () async {
                   Navigator.pop(context);
                   final text = await _promptForText(context, title: 'New Habit');
-                  if (text != null && text.trim().isNotEmpty) state.addHabit(text.trim());
+                  if (text != null && text.trim().isNotEmpty) {
+                    await state.addHabit(text.trim());
+                  }
                 },
               ),
               const Divider(),
@@ -53,7 +65,10 @@ void showQuickAdd(BuildContext context) {
                 title: const Text('View Progress'),
                 onTap: () {
                   Navigator.pop(context);
-                  Navigator.push(context, MaterialPageRoute(builder: (_) => const ProgressPage()));
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const ProgressPage()),
+                  );
                 },
               ),
             ],
@@ -63,6 +78,7 @@ void showQuickAdd(BuildContext context) {
     },
   );
 }
+
 
 
 

@@ -1,76 +1,145 @@
 import 'package:flutter/material.dart';
 import '../app_state_scope.dart';
-import 'goals_page.dart';
-import 'habits_page.dart';
-import 'progress_page.dart';
-import 'settings_page.dart';
-import 'reminders_page.dart';
 import '../widgets/profile_header.dart';
-import '../widgets/date_scroller.dart';
-import '../widgets/quick_card.dart';
-import '../widgets/stat_card.dart';
-import '../widgets/sparkline.dart';
 import '../helpers/dialog_helpers.dart';
 import '../helpers/utils.dart';
+import '../app_state.dart';
 
-class GoalsPage extends StatelessWidget {
+class GoalsPage extends StatefulWidget {
   const GoalsPage({super.key});
+
+  @override
+  State<GoalsPage> createState() => _GoalsPageState();
+}
+
+class _GoalsPageState extends State<GoalsPage>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _fadeController;
+  late Animation<double> _fadeAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _fadeController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
+    );
+
+    _fadeAnimation = CurvedAnimation(
+      parent: _fadeController,
+      curve: Curves.easeOutCubic,
+    );
+
+    // Run animation only once
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _fadeController.forward();
+    });
+  }
+
+  @override
+  void dispose() {
+    _fadeController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final state = AppStateScope.of(context);
-    return Scaffold(
-      appBar: AppBar(title: const Text('My Goals')),
-      body: AnimatedBuilder(
-        animation: state,
-        builder: (_, __) {
-          if (state.goals.isEmpty) return const EmptyState(msg: 'No goals yet. Add one!');
-          return ListView.separated(
-            itemCount: state.goals.length,
-            separatorBuilder: (_, __) => const Divider(height: 0),
-            itemBuilder: (_, i) {
-              final g = state.goals[i];
-              return Dismissible(
-                key: ValueKey(g.id),
-                background: Container(color: Colors.red.withOpacity(0.2)),
-                onDismissed: (_) => state.removeGoal(i),
-                child: CheckboxListTile(
-                  title: Text(
-                    g.title,
-                    style: TextStyle(decoration: g.done ? TextDecoration.lineThrough : null),
+
+    return AnimatedBuilder(
+      animation: state,
+      builder: (context, _) {
+        return Scaffold(
+          backgroundColor: state.backgroundColor,
+          appBar: AppBar(title: const Text('My Goals')),
+          body: state.goals.isEmpty
+              ? const EmptyState(msg: 'No goals yet. Add one!')
+              : SlideTransition(
+                  position: Tween<Offset>(
+                    begin: const Offset(0.0, 0.2),
+                    end: Offset.zero,
+                  ).animate(_fadeAnimation),
+                  child: FadeTransition(
+                    opacity: _fadeAnimation,
+                    child: ListView.separated(
+                      itemCount: state.goals.length,
+                      separatorBuilder: (_, __) => const Divider(height: 0),
+                      itemBuilder: (_, i) {
+                        final g = state.goals[i];
+
+                        return Dismissible(
+                          key: ValueKey(g.id),
+                          background: Container(
+                            color: Colors.red.withOpacity(0.2),
+                          ),
+                          direction: DismissDirection.endToStart,
+                          onDismissed: (_) => state.deleteGoal(g.id),
+                          child: CheckboxListTile(
+                            title: Text(g.title),
+                            subtitle: g.dueDate != null
+                                ? Text("Due: ${_dateShort(g.dueDate!)}")
+                                : null,
+                            value: g.done,
+                            // FIX: pass g.id instead of g
+                            onChanged: (_) => state.toggleGoal(g.id),
+                            controlAffinity: ListTileControlAffinity.leading,
+                          ),
+                        );
+                      },
+                    ),
                   ),
-                  subtitle: g.dueDate == null ? null : Text('Due: ${_dateShort(g.dueDate!)}'),
-                  value: g.done,
-                  onChanged: (_) => state.toggleGoal(i),
+                ),
+          floatingActionButton: FloatingActionButton(
+            tooltip: 'Add Goal',
+            child: const Icon(Icons.add),
+            onPressed: () async {
+              final title =
+                  await _promptForText(context, title: 'New Goal Title');
+              if (title == null || title.trim().isEmpty) return;
+
+              DateTime? due;
+
+              final addDue = await showDialog<bool>(
+                context: context,
+                builder: (ctx) => AlertDialog(
+                  title: const Text('Add Due Date?'),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.of(ctx).pop(false),
+                      child: const Text('No'),
+                    ),
+                    TextButton(
+                      onPressed: () => Navigator.of(ctx).pop(true),
+                      child: const Text('Yes'),
+                    ),
+                  ],
                 ),
               );
+
+              if (addDue == true) {
+                due = await showDatePicker(
+                  context: context,
+                  firstDate:
+                      DateTime.now().subtract(const Duration(days: 365 * 3)),
+                  lastDate:
+                      DateTime.now().add(const Duration(days: 365 * 3)),
+                  initialDate: DateTime.now(),
+                );
+              }
+
+              state.addGoal(title.trim(), due: due);
             },
-          );
-        },
-      ),
-      floatingActionButton: FloatingActionButton(
-        tooltip: 'Add Goal',
-        onPressed: () async {
-          final title = await _promptForText(context, title: 'New Goal');
-          if (title == null || title.trim().isEmpty) return;
-          DateTime? due;
-          if (context.mounted) {
-            due = await showDatePicker(
-              context: context,
-              firstDate: DateTime.now().subtract(const Duration(days: 1)),
-              lastDate: DateTime.now().add(const Duration(days: 365 * 3)),
-              initialDate: DateTime.now(),
-            );
-          }
-          state.addGoal(title.trim(), due: due);
-        },
-        child: const Icon(Icons.add),
-      ),
+          ),
+        );
+      },
     );
   }
 
-  Future<String?> _promptForText(BuildContext context, {required String title}) async {
+  Future<String?> _promptForText(BuildContext context,
+      {required String title}) async {
     String? result;
+
     await showDialog(
       context: context,
       builder: (ctx) {
@@ -94,11 +163,12 @@ class GoalsPage extends StatelessWidget {
         );
       },
     );
+
     return result;
   }
 
   String _dateShort(DateTime date) {
-    return "${date.year}-${date.month.toString().padLeft(2,'0')}-${date.day.toString().padLeft(2,'0')}";
+    return "${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}";
   }
 }
 
@@ -116,3 +186,5 @@ class EmptyState extends StatelessWidget {
     );
   }
 }
+
+

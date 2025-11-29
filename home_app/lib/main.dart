@@ -2,11 +2,14 @@ import 'package:flutter/material.dart';
 import 'app_state.dart';
 import 'app_state_scope.dart';
 import 'pages/home_page.dart';
-import 'notifications.dart';
+// import 'notifications.dart';  // Keep commented until implemented
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await NotificationService.init(); // Initialize Android notifications
+
+  // If notifications are added later:
+  // await NotificationService.init();
+
   runApp(const LifeGoalsApp());
 }
 
@@ -24,27 +27,46 @@ class _LifeGoalsAppState extends State<LifeGoalsApp> {
   @override
   void initState() {
     super.initState();
-    _init = appState.load();
+    // Load all persisted data (goals, habits, reminders, background color)
+    _init = appState.loadFromDatabase();
   }
 
   @override
   Widget build(BuildContext context) {
     return FutureBuilder(
       future: _init,
-      builder: (context, _) {
+      builder: (context, snapshot) {
+        // Show a loading indicator while initializing
+        if (snapshot.connectionState != ConnectionState.done) {
+          return const MaterialApp(
+            debugShowCheckedModeBanner: false,
+            home: Scaffold(
+              body: Center(child: CircularProgressIndicator()),
+            ),
+          );
+        }
+
+        // Once loaded, wrap MaterialApp with AppStateScope
         return AnimatedBuilder(
           animation: appState,
-          builder: (context, __) {
+          builder: (context, _) {
             final scheme = ColorScheme.fromSeed(
-              seedColor: Colors.blue,
-              brightness: appState.darkMode ? Brightness.dark : Brightness.light,
+              seedColor: appState.backgroundColor,
+              brightness: appState.darkMode
+                  ? Brightness.dark
+                  : Brightness.light,
             );
+
             return AppStateScope(
               notifier: appState,
               child: MaterialApp(
                 title: 'Life Goals',
                 debugShowCheckedModeBanner: false,
-                theme: ThemeData(colorScheme: scheme, useMaterial3: true),
+                theme: ThemeData(
+                  colorScheme: scheme,
+                  useMaterial3: true,
+                  scaffoldBackgroundColor: scheme.surface,
+                ),
                 home: const HomePage(),
               ),
             );
@@ -54,6 +76,8 @@ class _LifeGoalsAppState extends State<LifeGoalsApp> {
     );
   }
 }
+
+
 
 
 

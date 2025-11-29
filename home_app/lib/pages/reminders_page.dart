@@ -1,66 +1,95 @@
 import 'package:flutter/material.dart';
 import '../app_state_scope.dart';
-import 'goals_page.dart';
-import 'habits_page.dart';
-import 'progress_page.dart';
-import 'settings_page.dart';
-import '../widgets/profile_header.dart';
-import '../widgets/date_scroller.dart';
-import '../widgets/quick_card.dart';
-import '../widgets/stat_card.dart';
-import '../widgets/sparkline.dart';
-import '../helpers/dialog_helpers.dart';
-import '../helpers/utils.dart';
+import '../app_state.dart';
 
-class RemindersPage extends StatelessWidget {
+class RemindersPage extends StatefulWidget {
   const RemindersPage({super.key});
+
+  @override
+  State<RemindersPage> createState() => _RemindersPageState();
+}
+
+class _RemindersPageState extends State<RemindersPage>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _fadeController;
+  late Animation<double> _fadeAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _fadeController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
+    );
+    _fadeAnimation =
+        CurvedAnimation(parent: _fadeController, curve: Curves.easeOutCubic);
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _fadeController.forward();
+    });
+  }
+
+  @override
+  void dispose() {
+    _fadeController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final state = AppStateScope.of(context);
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('Reminders')),
-      body: AnimatedBuilder(
-        animation: state,
-        builder: (_, __) {
-          return Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: state.reminderTimes
-                      .map((t) => InputChip(
-                    label: Text(t), // display string directly
-                    onDeleted: () => state.removeReminder(t),
-                  ))
-                      .toList(),
-                ),
-                const SizedBox(height: 16),
-                FilledButton.icon(
-                  icon: const Icon(Icons.add_alarm),
-                  label: const Text('Add reminder time'),
-                  onPressed: () async {
-                    final picked = await showTimePicker(
-                      context: context,
-                      initialTime: TimeOfDay.now(),
-                    );
-                    if (picked != null) state.addReminder(picked);
-                  },
-                ),
-                const SizedBox(height: 12),
-                const Text(
-                  'Note: This demo stores reminder times but does not schedule OS notifications.\n'
-                      'To enable real alerts, integrate a package like "flutter_local_notifications".',
-                ),
-              ],
+    return AnimatedBuilder(
+      animation: state,
+      builder: (_, __) {
+        return Scaffold(
+          backgroundColor: state.backgroundColor,
+          appBar: AppBar(title: const Text('Reminders')),
+          body: FadeTransition(
+            opacity: _fadeAnimation,
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: state.reminders
+                        .map((t) => InputChip(
+                              label: Text(t),
+                              onDeleted: () => state.deleteReminder(t),
+                            ))
+                        .toList(),
+                  ),
+                  const SizedBox(height: 16),
+                  FilledButton.icon(
+                    icon: const Icon(Icons.add_alarm),
+                    label: const Text('Add Reminder Time'),
+                    onPressed: () async {
+                      final picked = await showTimePicker(
+                          context: context, initialTime: TimeOfDay.now());
+                      if (picked != null) state.addReminder(picked);
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Note: This demo stores reminder times but does not schedule OS notifications.\n'
+                    'To enable real alerts, integrate a package like "flutter_local_notifications".',
+                    style: TextStyle(fontSize: 12, color: Colors.grey),
+                  ),
+                ],
+              ),
             ),
-          );
-        },
-      ),
+          ),
+          floatingActionButton: FloatingActionButton(
+            tooltip: 'Go Home',
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Icon(Icons.home),
+          ),
+        );
+      },
     );
   }
 }
+
