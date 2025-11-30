@@ -139,22 +139,25 @@ class _HomePageState extends State<HomePage>
           bottomNavigationBar: BottomNavigationBar(
             currentIndex: _selectedIndex,
             onTap: (index) {
+              if (index == _selectedIndex) return; // optional: ignore re-taps
+
               setState(() => _selectedIndex = index);
-              if (index == 0) {
+
+              if (index == 1) {
                 Navigator.push(
-                    context, MaterialPageRoute(builder: (_) => const HomePage()));
-              } else if (index == 1) {
-                Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (_) =>
-                            HabitsPage(day: state.selectedDate)));
-              } else if (index == 2) {
-                Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const ProgressPage()));
-              }
-            },
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => HabitsPage(day: state.selectedDate),
+            ),
+          );
+        } else if (index == 2) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const ProgressPage()),
+          );
+        }
+      }
+,
             items: const [
               BottomNavigationBarItem(icon: Icon(Icons.flag), label: ''),
               BottomNavigationBarItem(icon: Icon(Icons.repeat), label: ''),
