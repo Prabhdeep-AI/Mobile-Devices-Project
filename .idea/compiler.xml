@@ -3,9 +3,9 @@
   <component name="CompilerConfiguration">
     <bytecodeTargetLevel>
       <module name="com.dexterous.flutterlocalnotifications.android.flutter_local_notifications" target="17" />
-      <module name="dev.flutter.plugin.gradle" target="17" />
-      <module name="dev.flutter.plugin.gradle.main" target="11" />
-      <module name="dev.flutter.plugin.gradle.test" target="11" />
+      <module name="gradle" target="17" />
+      <module name="gradle.main" target="11" />
+      <module name="gradle.test" target="11" />
     </bytecodeTargetLevel>
   </component>
 </project>

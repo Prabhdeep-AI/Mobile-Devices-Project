@@ -7,21 +7,19 @@ class NotificationService {
       FlutterLocalNotificationsPlugin();
 
   static Future<void> init() async {
-    tz.initializeTimeZones();
-    tz.setLocalLocation(tz.getLocation('America/New_York'));
+  const android = AndroidInitializationSettings('@mipmap/ic_launcher');
 
-    const android = AndroidInitializationSettings('@mipmap/ic_launcher');
-    const settings = InitializationSettings(android: android);
+  const settings = InitializationSettings(android: android);
 
-    await _notificationsPlugin.initialize(settings);
+  await _notificationsPlugin.initialize(settings);
 
-    // 🔥 Android 13+ notification permission (correct for v14.1.1)
-    final androidPlugin = _notificationsPlugin
-        .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>();
+  final androidPlugin = _notificationsPlugin.resolvePlatformSpecificImplementation<
+      AndroidFlutterLocalNotificationsPlugin>();
 
-    await androidPlugin?.requestPermission();
+  if (androidPlugin != null) {
+    await androidPlugin.requestPermission();   // <-- CORRECT name in v14+
   }
+}
 
   static Future<void> showInstant({
     required String title,
