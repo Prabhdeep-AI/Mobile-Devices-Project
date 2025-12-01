@@ -39,29 +39,40 @@ class _ProgressPageState extends State<ProgressPage> with SingleTickerProviderSt
   Widget build(BuildContext context) {
     final state = AppStateScope.of(context);
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('Progress')),
-      body: AnimatedBuilder(
-        animation: state,
-        builder: (_, __) {
-          final totalGoals = state.goals.length;
-          final done = state.goals.where((g) => g.done).length;
-          final habits = state.habits.length;
-          final totalStreak = state.habits.fold<int>(0, (sum, h) => sum + h.streak);
-          
-          // [FIX] Use the helper from utils.dart
-          final last7 = last7DaysCompletionCounts(state.habits); 
+    return AnimatedBuilder(
+      animation: state,
+      builder: (_, __) {
+        final totalGoals = state.goals.length;
+        final done = state.goals.where((g) => g.done).length;
+        final habits = state.habits.length;
+        final totalStreak = state.habits.fold<int>(0, (sum, h) => sum + h.streak);
+        final last7 = last7DaysCompletionCounts(state.habits);
 
-          return FadeTransition( // Wrapped in FadeTransition
+        return Scaffold(
+          backgroundColor: state.backgroundColor,
+          appBar: AppBar(title: const Text('Progress')),
+          body: FadeTransition(
             opacity: _fadeAnimation,
             child: Padding(
               padding: const EdgeInsets.all(16.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  ProgressTile(label: 'Goals completed', value: '$done / $totalGoals', icon: Icons.flag),
-                  ProgressTile(label: 'Habits tracking', value: '$habits', icon: Icons.repeat),
-                  ProgressTile(label: 'Total streak', value: '$totalStreak', icon: Icons.local_fire_department),
+                  ProgressTile(
+                    label: 'Goals completed',
+                    value: '$done / $totalGoals',
+                    icon: Icons.flag,
+                  ),
+                  ProgressTile(
+                    label: 'Habits tracking',
+                    value: '$habits',
+                    icon: Icons.repeat,
+                  ),
+                  ProgressTile(
+                    label: 'Total streak',
+                    value: '$totalStreak',
+                    icon: Icons.local_fire_department,
+                  ),
                   const SizedBox(height: 16),
                   const Text('Completions (last 7 days)'),
                   const Divider(),
@@ -69,26 +80,22 @@ class _ProgressPageState extends State<ProgressPage> with SingleTickerProviderSt
                     height: 100,
                     child: CustomPaint(
                       painter: SparklinePainter(values: last7),
-                      child: Container(),
                     ),
                   ),
                 ],
               ),
             ),
-          );
-        },
-      ),
-      // [NEW] FAB is now a Home button
-      floatingActionButton: FloatingActionButton(
-        tooltip: 'Go to Home',
-        onPressed: () {
-          // Pops the current page off the stack, returning to Home
-          Navigator.of(context).pop(); 
-        },
-        child: const Icon(Icons.home),
-      ),
+          ),
+          floatingActionButton: FloatingActionButton(
+            tooltip: 'Go to Home',
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Icon(Icons.home),
+          ),
+        );
+      },
     );
   }
+
 }
 
 
