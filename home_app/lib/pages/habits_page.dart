@@ -1,8 +1,10 @@
+// lib/pages/habits_page.dart
 import 'package:flutter/material.dart';
 import '../app_state_scope.dart';
 import '../helpers/utils.dart';
 import '../models.dart';
-import '../app_state.dart'; 
+import '../app_state.dart';
+import '../notifications.dart'; // <- import
 
 class HabitsPage extends StatefulWidget {
   final DateTime day;
@@ -66,7 +68,18 @@ class _HabitsPageState extends State<HabitsPage>
                         direction: DismissDirection.endToStart,
                         onDismissed: (_) => state.deleteHabit(h.id),
                         child: ListTile(
-                          onTap: () => state.toggleHabit(index, widget.day),
+                          onTap: () async {
+                            final wasDone = isDone;
+                            await state.toggleHabit(index, widget.day);
+                            final updated = state.habits[index];
+                            // If it was just completed, show notification
+                            if (!wasDone && updated.completions.contains(dayKey)) {
+                              await NotificationService.showInstant(
+                                title: 'Habit completed 🎉',
+                                body: 'You completed "${updated.title}" today — nice!',
+                              );
+                            }
+                          },
                           leading: Icon(
                             isDone ? Icons.check_circle : Icons.circle_outlined,
                             color: isDone ? Theme.of(context).colorScheme.primary : Colors.grey,
@@ -75,7 +88,17 @@ class _HabitsPageState extends State<HabitsPage>
                           subtitle: Text('Streak: ${h.streak} days'),
                           trailing: IconButton(
                             icon: Icon(isDone ? Icons.undo : Icons.check),
-                            onPressed: () => state.toggleHabit(index, widget.day),
+                            onPressed: () async {
+                              final wasDone = isDone;
+                              await state.toggleHabit(index, widget.day);
+                              final updated = state.habits[index];
+                              if (!wasDone && updated.completions.contains(dayKey)) {
+                                await NotificationService.showInstant(
+                                  title: 'Habit completed 🎉',
+                                  body: 'You completed "${updated.title}" today — nice!', 
+                                );
+                              }
+                            },
                           ),
                         ),
                       );
@@ -92,6 +115,7 @@ class _HabitsPageState extends State<HabitsPage>
     );
   }
 }
+
 
 
 

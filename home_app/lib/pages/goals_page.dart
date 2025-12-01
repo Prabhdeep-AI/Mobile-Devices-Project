@@ -1,9 +1,11 @@
+// lib/pages/goals_page.dart
 import 'package:flutter/material.dart';
 import '../app_state_scope.dart';
 import '../widgets/profile_header.dart';
 import '../helpers/dialog_helpers.dart';
 import '../helpers/utils.dart';
 import '../app_state.dart';
+import '../notifications.dart'; // <- import
 
 class GoalsPage extends StatefulWidget {
   const GoalsPage({super.key});
@@ -81,8 +83,21 @@ class _GoalsPageState extends State<GoalsPage>
                                 ? Text("Due: ${_dateShort(g.dueDate!)}")
                                 : null,
                             value: g.done,
-                            // FIX: pass g.id instead of g
-                            onChanged: (_) => state.toggleGoal(g.id),
+                            onChanged: (_) async {
+                              // Await the toggle, then notify if it became done
+                              await state.toggleGoal(g.id);
+                              final updated =
+                                  state.goals.firstWhere((x) => x.id == g.id);
+                              if (updated.done) {
+                                await NotificationService.showInstant(
+                                  title: 'Goal completed 🎉',
+                                  body: 'You completed "${updated.title}" — nice!',
+                                );
+                              } else {
+                                // Optionally notify on undo
+                                // await NotificationService.showInstantNotification(title: 'Goal undone', body: 'You reopened "${updated.title}"');
+                              }
+                            },
                             controlAffinity: ListTileControlAffinity.leading,
                           ),
                         );
@@ -120,15 +135,21 @@ class _GoalsPageState extends State<GoalsPage>
               if (addDue == true) {
                 due = await showDatePicker(
                   context: context,
-                  firstDate:
-                      DateTime.now().subtract(const Duration(days: 365 * 3)),
-                  lastDate:
-                      DateTime.now().add(const Duration(days: 365 * 3)),
+                  firstDate: DateTime.now().subtract(const Duration(days: 365 * 3)),
+                  lastDate: DateTime.now().add(const Duration(days: 365 * 3)),
                   initialDate: DateTime.now(),
                 );
               }
 
-              state.addGoal(title.trim(), due: due);
+              // Add goal and then show a notification
+              await state.addGoal(title.trim(), due: due);
+
+              // notify user
+              final latest = state.goals.last;
+              await NotificationService.showInstant(
+                title: 'New goal added',
+                body: 'You added "${latest.title}". Good luck!',
+              );
             },
           ),
         );
@@ -186,5 +207,6 @@ class EmptyState extends StatelessWidget {
     );
   }
 }
+
 
 

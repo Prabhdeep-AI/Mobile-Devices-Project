@@ -63,9 +63,14 @@ class DBHelper {
 
   // ---------------- ON UPGRADE ----------------
   static Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
-    if (oldVersion < 2) {
-      await db.execute('ALTER TABLE goals ADD COLUMN notes TEXT;');
-    }
+    // Note: The logic for oldVersion < 2 that alters the goals table is commented out
+    // as the `goals` table creation in _onCreate does not include a `notes` column,
+    // which would cause an error if the goals table already exists without it.
+    // Assuming the user's base goals table does not have a notes column.
+    
+    // if (oldVersion < 2) {
+    //   await db.execute('ALTER TABLE goals ADD COLUMN notes TEXT;');
+    // }
 
     if (oldVersion < 4) {
       await db.execute('''
@@ -214,52 +219,46 @@ class DBHelper {
   }
 
   // =====================================================
-  // ███ BACKGROUND COLOR PERSISTENCE (NEW CODE BELOW) ███
-  // =====================================================
+// ███ BACKGROUND COLOR PERSISTENCE (UPDATED) ███
+// =====================================================
 
-  // Convert a Color → "#RRGGBB"
-  static String _colorToHex(Color color) {
-    return '#${color.value.toRadixString(16).padLeft(8, '0')}';
-  }
+// Convert Color → "#AARRGGBB"
+static String _colorToHex(Color color) {
+  return '#${color.value.toRadixString(16).padLeft(8, '0')}';
+}
 
-  // Convert "#RRGGBB" → Color
-  static Color _hexToColor(String hex) {
-    hex = hex.replaceAll('#', '');
-    if (hex.length == 6) hex = 'ff$hex'; // add full opacity
-    return Color(int.parse(hex, radix: 16));
-  }
+// Convert "#RRGGBB" → Color
+static Color _hexToColor(String hex) {
+  hex = hex.replaceAll('#', '');
+  if (hex.length == 6) hex = 'ff$hex'; // add alpha
+  return Color(int.parse(hex, radix: 16));
+}
 
-  static Future<void> saveBackgroundColor(Color color) async {
-    final dbClient = await db;
-    final hex = _colorToHex(color);
+static Future<void> saveBackgroundColor(Color color) async {
+  final dbClient = await db;
+  final hex = _colorToHex(color);
 
-    await dbClient.insert(
-      'settings',
-      {'key': 'backgroundColor', 'value': hex},
-      conflictAlgorithm: ConflictAlgorithm.replace,
-    );
-  }
+  await dbClient.insert(
+    'settings',
+    {'key': 'backgroundColor', 'value': hex},
+    conflictAlgorithm: ConflictAlgorithm.replace,
+  );
+}
 
-  static Future<Color?> getBackgroundColor() async {
-    final dbClient = await db;
-    final maps = await dbClient.query(
-      'settings',
-      where: 'key = ?',
-      whereArgs: ['backgroundColor'],
-    );
+static Future<Color?> getBackgroundColor() async {
+  final dbClient = await db;
+  final maps = await dbClient.query(
+    'settings',
+    where: 'key = ?',
+    whereArgs: ['backgroundColor'],
+  );
 
-    if (maps.isEmpty) return null;
+  if (maps.isEmpty) return null;
+  final hex = maps.first['value'] as String?;
+  if (hex == null) return null;
 
-    final hex = maps.first['value'] as String?;
-    if (hex == null) return null;
-
-    return _hexToColor(hex);
-  }
+  return _hexToColor(hex);
 }
 
 
-
-
-
-
-
+}

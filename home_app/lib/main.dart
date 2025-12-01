@@ -2,14 +2,21 @@ import 'package:flutter/material.dart';
 import 'app_state.dart';
 import 'app_state_scope.dart';
 import 'pages/home_page.dart';
-// import 'notifications.dart';  // Keep commented until implemented
+import 'notifications.dart';  // Keep commented until implemented
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // If notifications are added later:
   // await NotificationService.init();
+await NotificationService.init();
+final plugin = FlutterLocalNotificationsPlugin();
+final android = await plugin.resolvePlatformSpecificImplementation<
+    AndroidFlutterLocalNotificationsPlugin>();
 
+await android?.requestPermission();
   runApp(const LifeGoalsApp());
 }
 
