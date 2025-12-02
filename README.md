@@ -12,7 +12,7 @@ Welcome to our app called Life Goals! This app helps you track goals, habits, an
 - Local notifications via `flutter_local_notifications` + `timezone`
 
 ## Tech Stack
-- **Flutter** (Material Design)
+- **Flutter**
 - **Dart**
 - **sqflite** for local database
 - **shared_preferences** for small key–value storage
