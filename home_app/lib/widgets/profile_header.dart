@@ -8,7 +8,7 @@ class ProfileHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final state = AppStateScope.watch(context); // ✅ watch instead of read
+    final state = AppStateScope.watch(context); 
 
     return Column(
       children: [

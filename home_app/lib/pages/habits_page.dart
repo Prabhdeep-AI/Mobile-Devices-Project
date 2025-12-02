@@ -19,7 +19,7 @@ class HabitsPage extends StatelessWidget {
           for (final h in state.habits)
             CheckboxListTile(
               value: h.completions.contains(todayKey),
-              title: Text(h.title), // <-- changed from h.text to h.title
+              title: Text(h.title), 
               subtitle: Text("Streak: ${h.streak}"),
               onChanged: (_) => state.toggleHabitCompletion(h),
             ),
