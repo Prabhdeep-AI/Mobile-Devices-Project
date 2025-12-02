@@ -25,6 +25,29 @@ class Goal {
       dueDate: dueDate ?? this.dueDate,
     );
   }
+
+  // -------------------------------
+  // API / JSON
+  // -------------------------------
+  factory Goal.fromJson(Map<String, dynamic> json) {
+    return Goal(
+      id: json['id'],
+      title: json['title'],
+      done: json['done'] ?? false,
+      createdAt: DateTime.parse(json['createdAt']),
+      dueDate: json['dueDate'] != null ? DateTime.parse(json['dueDate']) : null,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'title': title,
+      'done': done,
+      'createdAt': createdAt.toIso8601String(),
+      'dueDate': dueDate?.toIso8601String(),
+    };
+  }
 }
 
 class Habit {
@@ -49,7 +72,35 @@ class Habit {
       streak: streak ?? this.streak,
     );
   }
+
+  // -------------------------------
+  // API / JSON
+  // -------------------------------
+  factory Habit.fromJson(Map<String, dynamic> json) {
+    return Habit(
+      id: json['id'],
+      title: json['title'],
+      completions: (json['completions'] as List<dynamic>?)
+              ?.map((e) => e.toString())
+              .toSet() ??
+          {},
+      streak: json['streak'] ?? 0,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'title': title,
+      'completions': completions.toList(),
+      'streak': streak,
+    };
+  }
 }
+
+
+
+
 
 
 

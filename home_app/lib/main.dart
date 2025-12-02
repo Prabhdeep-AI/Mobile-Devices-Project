@@ -1,22 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:timezone/data/latest_all.dart' as tz;
+
 import 'app_state.dart';
 import 'app_state_scope.dart';
 import 'pages/home_page.dart';
-import 'notifications.dart';  // Keep commented until implemented
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-
+import 'notifications.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  // If notifications are added later:
-  // await NotificationService.init();
-await NotificationService.init();
-final plugin = FlutterLocalNotificationsPlugin();
-final android = await plugin.resolvePlatformSpecificImplementation<
-    AndroidFlutterLocalNotificationsPlugin>();
-
-await android?.requestPermission();
+  tz.initializeTimeZones();
+  await NotificationService.init();
   runApp(const LifeGoalsApp());
 }
 
@@ -34,7 +28,6 @@ class _LifeGoalsAppState extends State<LifeGoalsApp> {
   @override
   void initState() {
     super.initState();
-    // Load all persisted data (goals, habits, reminders, background color)
     _init = appState.loadFromDatabase();
   }
 
@@ -43,7 +36,6 @@ class _LifeGoalsAppState extends State<LifeGoalsApp> {
     return FutureBuilder(
       future: _init,
       builder: (context, snapshot) {
-        // Show a loading indicator while initializing
         if (snapshot.connectionState != ConnectionState.done) {
           return const MaterialApp(
             debugShowCheckedModeBanner: false,
@@ -53,7 +45,6 @@ class _LifeGoalsAppState extends State<LifeGoalsApp> {
           );
         }
 
-        // Once loaded, wrap MaterialApp with AppStateScope
         return AnimatedBuilder(
           animation: appState,
           builder: (context, _) {
@@ -67,7 +58,6 @@ class _LifeGoalsAppState extends State<LifeGoalsApp> {
             return AppStateScope(
               notifier: appState,
               child: MaterialApp(
-                title: 'Life Goals',
                 debugShowCheckedModeBanner: false,
                 theme: ThemeData(
                   colorScheme: scheme,
@@ -83,6 +73,8 @@ class _LifeGoalsAppState extends State<LifeGoalsApp> {
     );
   }
 }
+
+
 
 
 

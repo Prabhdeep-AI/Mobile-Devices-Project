@@ -1,10 +1,6 @@
 import 'package:flutter/material.dart';
 import '../app_state.dart';
-import '../models.dart'; // Ensure Habit is defined here
-
-// ----------------------
-// Helper Functions
-// ----------------------
+import '../models.dart';
 
 String dateShort(DateTime d) => '${d.year}/${d.month}/${d.day}';
 
@@ -23,10 +19,6 @@ List<int> last7DaysCompletionCounts(List<Habit> habits) {
       .toList();
 }
 
-// ----------------------
-// Sparkline Widget
-// ----------------------
-
 class Sparkline extends StatelessWidget {
   final List<Habit> habits;
 
@@ -44,10 +36,6 @@ class Sparkline extends StatelessWidget {
     );
   }
 }
-
-// ----------------------
-// Sparkline Painter
-// ----------------------
 
 class SparklinePainter extends CustomPainter {
   final List<int> values;
@@ -81,13 +69,11 @@ class SparklinePainter extends CustomPainter {
 
     canvas.drawPath(path, linePaint);
 
-    // Dots
     final dotPaint = Paint()..color = Colors.blue;
 
     for (int i = 0; i < values.length; i++) {
       final x = i * stepX;
       final y = size.height - (values[i] / maxV) * size.height;
-
       canvas.drawCircle(Offset(x, y), 3, dotPaint);
     }
   }
@@ -96,3 +82,6 @@ class SparklinePainter extends CustomPainter {
   bool shouldRepaint(covariant SparklinePainter oldDelegate) =>
       oldDelegate.values != values;
 }
+
+
+

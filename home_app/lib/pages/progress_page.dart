@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../app_state.dart';
 import '../app_state_scope.dart';
-import '../helpers/utils.dart'; // [FIX] Import utils.dart to use last7DaysCompletionCounts
+import '../helpers/utils.dart';
 import '../widgets/progress_tile.dart';
 
 class ProgressPage extends StatefulWidget {
@@ -11,7 +11,8 @@ class ProgressPage extends StatefulWidget {
   State<ProgressPage> createState() => _ProgressPageState();
 }
 
-class _ProgressPageState extends State<ProgressPage> with SingleTickerProviderStateMixin {
+class _ProgressPageState extends State<ProgressPage>
+    with SingleTickerProviderStateMixin {
   late AnimationController _fadeController;
   late Animation<double> _fadeAnimation;
 
@@ -20,12 +21,10 @@ class _ProgressPageState extends State<ProgressPage> with SingleTickerProviderSt
     super.initState();
     _fadeController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1500), // Increased duration
+      duration: const Duration(milliseconds: 1500),
     );
-    _fadeAnimation = CurvedAnimation(
-      parent: _fadeController,
-      curve: Curves.easeOutCubic,
-    );
+    _fadeAnimation =
+        CurvedAnimation(parent: _fadeController, curve: Curves.easeOutCubic);
     _fadeController.forward();
   }
 
@@ -34,18 +33,19 @@ class _ProgressPageState extends State<ProgressPage> with SingleTickerProviderSt
     _fadeController.dispose();
     super.dispose();
   }
-  
+
   @override
   Widget build(BuildContext context) {
-    final state = AppStateScope.of(context);
+    final state = AppStateScope.watch(context); // ✅ FIXED
 
     return AnimatedBuilder(
       animation: state,
       builder: (_, __) {
         final totalGoals = state.goals.length;
         final done = state.goals.where((g) => g.done).length;
-        final habits = state.habits.length;
-        final totalStreak = state.habits.fold<int>(0, (sum, h) => sum + h.streak);
+        final totalHabits = state.habits.length;
+        final totalStreak =
+            state.habits.fold<int>(0, (sum, h) => sum + h.streak);
         final last7 = last7DaysCompletionCounts(state.habits);
 
         return Scaffold(
@@ -65,7 +65,7 @@ class _ProgressPageState extends State<ProgressPage> with SingleTickerProviderSt
                   ),
                   ProgressTile(
                     label: 'Habits tracking',
-                    value: '$habits',
+                    value: '$totalHabits',
                     icon: Icons.repeat,
                   ),
                   ProgressTile(
@@ -95,34 +95,46 @@ class _ProgressPageState extends State<ProgressPage> with SingleTickerProviderSt
       },
     );
   }
-
 }
 
-
 class SparklinePainter extends CustomPainter {
-  // ...
-  // [Content from original file]
   final List<int> values;
   SparklinePainter({required this.values});
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()..color = Colors.blue..strokeWidth = 3..style = PaintingStyle.stroke;
+    final paint = Paint()
+      ..color = Colors.blue
+      ..strokeWidth = 3
+      ..style = PaintingStyle.stroke;
+
     if (values.isEmpty) return;
+
     final step = size.width / (values.length - 1);
     final maxVal = values.reduce((a, b) => a > b ? a : b);
+
     final path = Path();
     for (int i = 0; i < values.length; i++) {
       final x = i * step;
-      final y = size.height - (values[i] / (maxVal == 0 ? 1 : maxVal)) * size.height;
-      if (i == 0) path.moveTo(x, y);
-      else path.lineTo(x, y);
+      final y = size.height -
+          (values[i] / (maxVal == 0 ? 1 : maxVal)) * size.height;
+      if (i == 0) {
+        path.moveTo(x, y);
+      } else {
+        path.lineTo(x, y);
+      }
     }
     canvas.drawPath(path, paint);
-    final dotPaint = Paint()..color = Colors.blue.shade900..style = PaintingStyle.fill;
+
+    // dots
+    final dotPaint = Paint()
+      ..color = Colors.blue.shade900
+      ..style = PaintingStyle.fill;
+
     for (int i = 0; i < values.length; i++) {
       final x = i * step;
-      final y = size.height - (values[i] / (maxVal == 0 ? 1 : maxVal)) * size.height;
+      final y = size.height -
+          (values[i] / (maxVal == 0 ? 1 : maxVal)) * size.height;
       canvas.drawCircle(Offset(x, y), 3, dotPaint);
     }
   }
@@ -130,3 +142,4 @@ class SparklinePainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 }
+

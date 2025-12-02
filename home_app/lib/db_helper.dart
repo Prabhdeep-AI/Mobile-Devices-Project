@@ -8,7 +8,7 @@ import 'models.dart';
 class DBHelper {
   static Database? _db;
   static const _dbName = 'life_goals.db';
-  static const _dbVersion = 4; // <-- bumped version for settings table
+  static const _dbVersion = 6;
 
   static Future<Database> get db async {
     if (_db != null) return _db!;
@@ -26,7 +26,6 @@ class DBHelper {
     );
   }
 
-  // ---------------- CREATE TABLES ----------------
   static Future<void> _onCreate(Database db, int version) async {
     await db.execute('''
       CREATE TABLE goals (
@@ -48,11 +47,11 @@ class DBHelper {
 
     await db.execute('''
       CREATE TABLE reminders (
-        time TEXT PRIMARY KEY
+        time TEXT PRIMARY KEY,
+        name TEXT NOT NULL
       );
     ''');
 
-    // NEW SETTINGS TABLE
     await db.execute('''
       CREATE TABLE settings (
         key TEXT PRIMARY KEY,
@@ -61,28 +60,13 @@ class DBHelper {
     ''');
   }
 
-  // ---------------- ON UPGRADE ----------------
   static Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
-    // Note: The logic for oldVersion < 2 that alters the goals table is commented out
-    // as the `goals` table creation in _onCreate does not include a `notes` column,
-    // which would cause an error if the goals table already exists without it.
-    // Assuming the user's base goals table does not have a notes column.
-    
-    // if (oldVersion < 2) {
-    //   await db.execute('ALTER TABLE goals ADD COLUMN notes TEXT;');
-    // }
-
-    if (oldVersion < 4) {
-      await db.execute('''
-        CREATE TABLE IF NOT EXISTS settings (
-          key TEXT PRIMARY KEY,
-          value TEXT
-        );
-      ''');
+    if (oldVersion < 6) {
+      await db.execute('CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT);');
     }
   }
 
-  // ---------------- GOALS ----------------
+  // ------------------ GOALS ------------------
   static Future<void> insertGoal(Goal goal) async {
     final dbClient = await db;
     await dbClient.insert(
@@ -132,7 +116,7 @@ class DBHelper {
     await dbClient.delete('goals', where: 'id = ?', whereArgs: [id]);
   }
 
-  // ---------------- HABITS ----------------
+  // ------------------ HABITS ------------------
   static Future<void> insertHabit(Habit habit) async {
     final dbClient = await db;
     await dbClient.insert(
@@ -179,86 +163,82 @@ class DBHelper {
     await dbClient.delete('habits', where: 'id = ?', whereArgs: [id]);
   }
 
-  // ---------------- REMINDERS ----------------
-  static Future<void> addReminder(String time) async {
+  // ------------------ REMINDERS ------------------
+  static Future<void> addReminder(Map<String, String> reminder) async {
     final dbClient = await db;
-    await dbClient.insert('reminders', {'time': time}, conflictAlgorithm: ConflictAlgorithm.replace);
+    await dbClient.insert('reminders', reminder, conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
-  static Future<void> removeReminder(String time) async {
+  static Future<void> removeReminder(String timeName) async {
     final dbClient = await db;
+    final parts = timeName.split('|');
+    if (parts.length != 2) return;
+    final time = parts[0];
     await dbClient.delete('reminders', where: 'time = ?', whereArgs: [time]);
   }
 
-  static Future<List<String>> getReminders() async {
+  static Future<List<Map<String, String>>> getReminders() async {
     final dbClient = await db;
     final maps = await dbClient.query('reminders');
-    return maps.map((m) => m['time'] as String).toList();
+    return maps.map((m) => {'time': m['time'] as String, 'name': m['name'] as String}).toList();
   }
 
-  // ---------------- STREAK ----------------
+  // ------------------ STREAK ------------------
   static int calculateStreak(Set<String> completions) {
     if (completions.isEmpty) return 0;
-
-    final today = DateTime.now();
     int streak = 0;
-
+    final today = DateTime.now();
     for (int i = 0; i < 365; i++) {
       final day = today.subtract(Duration(days: i));
-      final key =
-          '${day.year.toString().padLeft(4, '0')}${day.month.toString().padLeft(2, '0')}${day.day.toString().padLeft(2, '0')}';
-
-      if (completions.contains(key)) {
-        streak++;
-      } else {
-        break;
-      }
+      final key = '${day.year.toString().padLeft(4,'0')}${day.month.toString().padLeft(2,'0')}${day.day.toString().padLeft(2,'0')}';
+      if (completions.contains(key)) streak++; else break;
     }
-
     return streak;
   }
 
-  // =====================================================
-// ███ BACKGROUND COLOR PERSISTENCE (UPDATED) ███
-// =====================================================
+  // ------------------ BACKGROUND ------------------
+  static String _colorToHex(Color color) => '#${color.value.toRadixString(16).padLeft(8,'0')}';
+  static Color _hexToColor(String hex) {
+    hex = hex.replaceAll('#', '');
+    if (hex.length == 6) hex = 'ff$hex';
+    return Color(int.parse(hex, radix:16));
+  }
 
-// Convert Color → "#AARRGGBB"
-static String _colorToHex(Color color) {
-  return '#${color.value.toRadixString(16).padLeft(8, '0')}';
+  static Future<void> saveBackgroundColor(Color color) async {
+    final dbClient = await db;
+    await dbClient.insert('settings', {'key':'backgroundColor','value':_colorToHex(color)}, conflictAlgorithm: ConflictAlgorithm.replace);
+  }
+
+  static Future<Color?> getBackgroundColor() async {
+    final dbClient = await db;
+    final maps = await dbClient.query('settings', where:'key=?', whereArgs:['backgroundColor']);
+    if (maps.isEmpty) return null;
+    return _hexToColor(maps.first['value'] as String);
+  }
+
+  // ------------------ PROFILE NAME ------------------
+  static Future<void> saveProfileName(String name) async {
+    final dbClient = await db;
+    await dbClient.insert('settings', {'key':'profileName','value':name}, conflictAlgorithm: ConflictAlgorithm.replace);
+  }
+
+  static Future<String?> getProfileName() async {
+    final dbClient = await db;
+    final maps = await dbClient.query('settings', where:'key=?', whereArgs:['profileName']);
+    if (maps.isEmpty) return null;
+    return maps.first['value'] as String?;
+  }
+
+  // ------------------ CLEAR ALL ------------------
+  static Future<void> clearAllData() async {
+    final dbClient = await db;
+    await dbClient.delete('goals');
+    await dbClient.delete('habits');
+    await dbClient.delete('reminders');
+    await dbClient.delete('settings');
+  }
 }
 
-// Convert "#RRGGBB" → Color
-static Color _hexToColor(String hex) {
-  hex = hex.replaceAll('#', '');
-  if (hex.length == 6) hex = 'ff$hex'; // add alpha
-  return Color(int.parse(hex, radix: 16));
-}
-
-static Future<void> saveBackgroundColor(Color color) async {
-  final dbClient = await db;
-  final hex = _colorToHex(color);
-
-  await dbClient.insert(
-    'settings',
-    {'key': 'backgroundColor', 'value': hex},
-    conflictAlgorithm: ConflictAlgorithm.replace,
-  );
-}
-
-static Future<Color?> getBackgroundColor() async {
-  final dbClient = await db;
-  final maps = await dbClient.query(
-    'settings',
-    where: 'key = ?',
-    whereArgs: ['backgroundColor'],
-  );
-
-  if (maps.isEmpty) return null;
-  final hex = maps.first['value'] as String?;
-  if (hex == null) return null;
-
-  return _hexToColor(hex);
-}
 
 
-}
+

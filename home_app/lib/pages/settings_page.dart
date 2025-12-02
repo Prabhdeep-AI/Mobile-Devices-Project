@@ -1,8 +1,7 @@
-// settings_page.dart
 import 'package:flutter/material.dart';
 import '../app_state_scope.dart';
 import '../app_state.dart';
-import 'reminders_page.dart';
+import '../helpers/dialog_helpers.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -11,258 +10,109 @@ class SettingsPage extends StatefulWidget {
   State<SettingsPage> createState() => _SettingsPageState();
 }
 
-class _SettingsPageState extends State<SettingsPage>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _fadeController;
-  late Animation<double> _fadeAnimation;
+class _SettingsPageState extends State<SettingsPage> {
+  late TextEditingController _nameController;
 
   @override
   void initState() {
     super.initState();
-    _fadeController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 800),
-    );
-    _fadeAnimation = CurvedAnimation(
-      parent: _fadeController,
-      curve: Curves.easeOutCubic,
-    );
+    _nameController = TextEditingController();
+  }
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) _fadeController.forward();
-    });
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final appState = AppStateScope.read(context);
+    _nameController.text = appState.profileName;
   }
 
   @override
   void dispose() {
-    _fadeController.dispose();
+    _nameController.dispose();
     super.dispose();
-  }
-
-  // Custom RGB picker
-  Future<Color?> _showCustomColorPicker(BuildContext ctx, Color initial) async {
-    Color current = initial;
-    int r = current.red;
-    int g = current.green;
-    int b = current.blue;
-
-    return showDialog<Color>(
-      context: ctx,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Pick custom color'),
-          content: StatefulBuilder(
-            builder: (context, setState) {
-              Color preview = Color.fromARGB(255, r, g, b);
-
-              return Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    height: 60,
-                    width: double.infinity,
-                    margin: const EdgeInsets.only(bottom: 12),
-                    decoration: BoxDecoration(
-                      color: preview,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.grey.shade300),
-                    ),
-                  ),
-                  Row(
-                    children: [
-                      const Text('R'),
-                      Expanded(
-                        child: Slider(
-                          value: r.toDouble(),
-                          min: 0,
-                          max: 255,
-                          onChanged: (v) => setState(() => r = v.toInt()),
-                        ),
-                      ),
-                    ],
-                  ),
-                  Row(
-                    children: [
-                      const Text('G'),
-                      Expanded(
-                        child: Slider(
-                          value: g.toDouble(),
-                          min: 0,
-                          max: 255,
-                          onChanged: (v) => setState(() => g = v.toInt()),
-                        ),
-                      ),
-                    ],
-                  ),
-                  Row(
-                    children: [
-                      const Text('B'),
-                      Expanded(
-                        child: Slider(
-                          value: b.toDouble(),
-                          min: 0,
-                          max: 255,
-                          onChanged: (v) => setState(() => b = v.toInt()),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    '#${r.toRadixString(16).padLeft(2, '0')}${g.toRadixString(16).padLeft(2, '0')}${b.toRadixString(16).padLeft(2, '0')}'
-                        .toUpperCase(),
-                  ),
-                ],
-              );
-            },
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(null),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                final picked = Color.fromARGB(255, r, g, b);
-                Navigator.of(context).pop(picked);
-              },
-              child: const Text('Select'),
-            ),
-          ],
-        );
-      },
-    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final state = AppStateScope.of(context);
-    final theme = Theme.of(context);
+    final appState = AppStateScope.watch(context);
 
-    return AnimatedBuilder(
-      animation: state,
-      builder: (_, __) {
-        return Scaffold(
-          backgroundColor: state.backgroundColor,
-          appBar: AppBar(title: const Text('Settings')),
-          body: FadeTransition(
-            opacity: _fadeAnimation,
-            child: ListView(
-              children: [
-                const SizedBox(height: 8),
-
-                // Dark Mode only (no Auto Theme)
-                SwitchListTile(
-                  title: const Text('Dark Mode'),
-                  value: state.darkMode,
-                  onChanged: (v) => state.setDarkMode(v),
-                ),
-
-                const Divider(),
-
-                // Primary Color Theme
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  child: Text(
-                    'Primary Color Theme',
-                    style: theme.textTheme.titleSmall!
-                        .copyWith(color: Colors.grey.shade600),
-                  ),
-                ),
-
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  child: Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      // PRESET COLOR OPTIONS
-                      ...AppState.backgroundOptions.map((opt) {
-                        final selected = state.backgroundKey == opt.key;
-                        return ActionChip(
-                          avatar: Icon(
-                            selected ? Icons.check : opt.icon,
-                            color: selected ? Colors.white : opt.color,
-                          ),
-                          label: Text(
-                            opt.name,
-                            style: TextStyle(
-                              color: selected ? Colors.white : null,
-                              fontWeight: selected
-                                  ? FontWeight.bold
-                                  : FontWeight.normal,
-                            ),
-                          ),
-                          backgroundColor: selected ? opt.color : null,
-                          onPressed: () => state.setBackground(opt.key),
-                        );
-                      }),
-
-                      // CUSTOM COLOR PICKER (no setCustomColor, no autoTheme)
-                      ActionChip(
-                        avatar: const Icon(Icons.colorize),
-                        label: const Text("Custom"),
-                        onPressed: () async {
-                          final picked = await _showCustomColorPicker(
-                            context,
-                            state.backgroundColor,
-                          );
-                          if (picked != null) {
-                            // Just apply new color directly
-                            await state.updateBackgroundColor(picked);
-                          }
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-
-                const Divider(),
-
-                // Reminders
-                ListTile(
-                  leading: const Icon(Icons.alarm),
-                  title: const Text('Reminders'),
-                  subtitle: Text(
-                    'Manage daily reminders: ${state.reminders.length} set',
-                  ),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const RemindersPage()),
-                    );
-                  },
-                ),
-
-                const Divider(),
-
-                // About
-                ListTile(
-                  leading: const Icon(Icons.info_outline),
-                  title: const Text('About'),
-                  subtitle:
-                      const Text('Life Goals • Flutter demo with persistence'),
-                  onTap: () => showAboutDialog(
-                    context: context,
-                    applicationName: 'Life Goals',
-                    applicationVersion: '1.1',
-                    applicationIcon: const Icon(Icons.flag),
-                  ),
-                ),
-              ],
+    return Scaffold(
+      backgroundColor: appState.backgroundColor,
+      appBar: AppBar(
+        title: const Text("Settings"),
+      ),
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          const Text(
+            "Profile Name",
+            style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
+          TextField(
+            controller: _nameController,
+            decoration: const InputDecoration(
+              labelText: "Enter profile name",
+              border: OutlineInputBorder(),
+            ),
+            onChanged: (value) {
+              appState.setProfileName(value);
+            },
+          ),
+          const SizedBox(height: 24),
+          ElevatedButton(
+            onPressed: () => DialogHelpers.pickColorDialog(context),
+            child: const Text("Change Background Color"),
+          ),
+          const SizedBox(height: 32),
+          const Text(
+            "Danger Zone",
+            style: TextStyle(
+              fontSize: 17,
+              fontWeight: FontWeight.bold,
+              color: Colors.red,
             ),
           ),
-          floatingActionButton: FloatingActionButton(
-            tooltip: 'Go Home',
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Icon(Icons.home),
+          const SizedBox(height: 8),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () {
+              showDialog(
+                context: context,
+                builder: (ctx) => AlertDialog(
+                  title: const Text("Reset Everything?"),
+                  content: const Text(
+                      "This will erase all goals, habits, streaks, completions, AND reset the theme & profile name back to default. This cannot be undone."),
+                  actions: [
+                    TextButton(
+                        onPressed: () => Navigator.of(ctx).pop(),
+                        child: const Text("Cancel")),
+                    TextButton(
+                        onPressed: () {
+                          appState.resetAll();
+                          Navigator.of(ctx).pop();
+                        },
+                        child: const Text("Reset")),
+                  ],
+                ),
+              );
+            },
+            child: const Text("Reset All Data"),
           ),
-        );
-      },
+        ],
+      ),
     );
   }
 }
+
+
+
+
+
+
 
 
 

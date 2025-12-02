@@ -1,24 +1,32 @@
 import 'package:flutter/material.dart';
+import '../app_state_scope.dart';
 
 class ProfileHeader extends StatelessWidget {
   final DateTime date;
+
   const ProfileHeader({super.key, required this.date});
 
   @override
   Widget build(BuildContext context) {
-    final dStr =
-        '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12, top: 8),
-      child: Column(
-        children: [
-          const CircleAvatar(radius: 24, child: Icon(Icons.person)),
-          const SizedBox(height: 6),
-          Text('My Profile', style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: 2),
-          Text(dStr, style: Theme.of(context).textTheme.labelMedium),
-        ],
-      ),
+    final state = AppStateScope.watch(context); // ✅ watch instead of read
+
+    return Column(
+      children: [
+        const CircleAvatar(
+          radius: 30,
+          child: Icon(Icons.person, size: 30),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          state.profileName, // dynamically updates
+          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          '${date.year}-${date.month.toString().padLeft(2,'0')}-${date.day.toString().padLeft(2,'0')}',
+          style: const TextStyle(color: Colors.grey),
+        ),
+      ],
     );
   }
 }
